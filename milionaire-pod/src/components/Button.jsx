@@ -1,0 +1,190 @@
+import React, { memo, useCallback, useTransition } from 'react';
+import styled, { css } from 'styled-components';
+
+// Types
+export const ButtonVariant = {
+    DEFAULT: 'default',
+    ACTION: 'action',
+    CANCEL: 'cancel',
+};
+
+// Constants
+const COLORS = {
+    white: '#FFFFFF',
+    black: '#000000',
+    action: '#1E29F6',
+    actionHover: 'rgba(30, 41, 246, 0.8)',
+    cancel: '#ff1900',
+    cancelHover: 'rgba(255, 25, 0, 0.8)',
+    error: 'rgba(248, 110, 110, 0.2)',
+    errorHover: 'rgba(248, 110, 110, 0.3)',
+};
+
+// Styled Components
+const IconWrapper = styled.span`
+  margin-${props => props.$position === 'left' ? 'right' : 'left'}: 8px;
+`;
+
+const getVariantStyles = (variant) => {
+    switch (variant) {
+        case ButtonVariant.ACTION:
+            return css`
+        background-color: ${COLORS.action};
+        border: none;
+        border-radius: ${props => props.theme.radii.small};
+        padding: 15px 40px;
+
+        &:hover:not(:disabled) {
+          background-color: ${COLORS.actionHover};
+        }
+
+        &:disabled {
+          background-color: ${COLORS.actionHover};
+          color: ${COLORS.white};
+        }
+      `;
+
+        case ButtonVariant.CANCEL:
+            return css`
+        background-color: ${COLORS.cancel};
+        border: none;
+        border-radius: ${props => props.theme.radii.small};
+        padding: 15px 40px;
+
+        &:hover:not(:disabled) {
+          background-color: ${COLORS.cancelHover};
+        }
+
+        &:disabled {
+          background-color: ${COLORS.cancelHover};
+          color: ${COLORS.white};
+        }
+      `;
+
+        default:
+            return css`
+        background-color: ${props => {
+                    if (props.$error) return COLORS.error;
+                    if (props.$primary) return 'rgba(255, 255, 255, 0.2)';
+                    return 'rgba(255, 255, 255, 0.15)';
+                }};
+        border: ${props =>
+                    props.$error || props.$primary
+                        ? 'none'
+                        : '1px solid rgba(255, 255, 255, 0.3)'
+                };
+        border-radius: 12px;
+        padding: 16px 40px;
+
+        &:hover:not(:disabled) {
+          background-color: ${props => {
+                    if (props.$error) return COLORS.errorHover;
+                    if (props.$primary) return 'rgba(255, 255, 255, 0.3)';
+                    return 'rgba(255, 255, 255, 0.25)';
+                }};
+          border: ${props =>
+                    props.$error || props.$primary
+                        ? 'none'
+                        : '1px solid rgba(255, 255, 255, 0.5)'
+                };
+        }
+
+        &:disabled {
+          background-color: rgba(255, 255, 255, 0.1);
+          color: ${COLORS.black};
+        }
+      `;
+    }
+};
+
+const StyledButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: ${({ theme }) => theme.fonts.default};
+  font-size: ${props => props.theme.fontSizes.small};
+  font-weight: 500;
+  line-height: 1.2;
+  color: ${COLORS.white};
+  min-height: 4.2rem;
+  height: 4.2rem;
+  flex: ${props => props.$fullWidth ? '1' : 'none'};
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  box-sizing: border-box;
+  contain: layout style;
+
+  ${props => getVariantStyles(props.$variant)}
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+`;
+
+const BaseButton = memo(({
+    text,
+    variant = ButtonVariant.DEFAULT,
+    primary = false,
+    error = false,
+    fullWidth = false,
+    onClick,
+    disabled = false,
+    icon,
+    iconLeft,
+    iconRight,
+}) => {
+    const [isPending, startTransition] = useTransition();
+    const leftIcon = iconLeft || icon;
+
+    const handleClick = useCallback(() => {
+        if (onClick && !disabled) {
+            startTransition(() => {
+                onClick();
+            });
+        }
+    }, [onClick, disabled]);
+
+    return (
+        <StyledButton
+            $variant={variant}
+            $primary={primary}
+            $error={error}
+            $fullWidth={fullWidth}
+            onClick={handleClick}
+            disabled={disabled || isPending}
+        >
+            {leftIcon && <IconWrapper $position="left">{leftIcon}</IconWrapper>}
+            {isPending ? 'Loading...' : text}
+            {iconRight && <IconWrapper $position="right">{iconRight}</IconWrapper>}
+        </StyledButton>
+    );
+});
+
+BaseButton.displayName = 'BaseButton';
+
+export const Button = memo((props) => (
+    <BaseButton {...props} variant={ButtonVariant.DEFAULT} />
+));
+
+Button.displayName = 'Button';
+
+export const ButtonAction = memo((props) => (
+    <BaseButton {...props} variant={ButtonVariant.ACTION} />
+));
+
+ButtonAction.displayName = 'ButtonAction';
+
+export const ButtonCancel = memo((props) => (
+    <BaseButton {...props} variant={ButtonVariant.CANCEL} />
+));
+
+ButtonCancel.displayName = 'ButtonCancel';

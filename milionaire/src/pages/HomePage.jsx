@@ -613,6 +613,9 @@ function HomePage() {
 
         try {
             const comparisonTx = await performComparison(aliceWallet, 'Alice')
+
+            // Wait for comparision resuls
+
             const result = await getFullComparisonResult()
 
             const txHash = comparisonTx.transaction.hash
