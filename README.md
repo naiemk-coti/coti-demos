@@ -57,6 +57,17 @@ Implementation of Yao's classic Millionaires' Problem using COTI's Garbled Circu
 
 ---
 
+### 💰 Millionaires' Problem – Privacy on Demand (PoD)
+**Source Code:** [/milionaire-pod](./milionaire-pod)
+
+Same Millionaires' Problem example, built with **COTI Privacy on Demand (PoD)**. The contract and all user interactions (transactions, UI, explorer links) run on **Ethereum Sepolia**. The **privacy layer**—encryption via the PoD service and MPC comparison—runs on **COTI testnet**, so you get the same private comparison flow on an EVM testnet (Sepolia) with standard tools and Etherscan.
+
+**Key Features:**
+- Contract and transactions on Sepolia; privacy (encryption, MPC) on COTI testnet
+- PoD encryption service (POD keys) for wealth inputs
+- Same flow: submit encrypted wealth, compare, decrypt results per party
+
+---
 
 ### 🗳️ Encrypted Voting
 **Live Demo:** [https://vote.demo.coti.io](https://vote.demo.coti.io)  

@@ -10,6 +10,20 @@
 A decentralized implementation of **Yao's Millionaires' Problem** using COTI's Garbled Circuits (GC) and Multi-Party Computation (MPC) technology.
 
 
+## Millionaire – Privacy on Demand (PoD)
+
+This directory (**milionaire-pod**) is the **same Millionaires' Problem example**, built with **COTI Privacy on Demand (PoD)**. The flow and UX match the original (Alice and Bob submit encrypted wealth, trigger comparison, and receive encrypted results), but the deployment and privacy model differ.
+
+### Where things run
+
+| Layer | Network | What happens |
+|-------|--------|----------------|
+| **Contract & transactions** | **Sepolia** | The `MillionaireComparison` contract is deployed on Ethereum Sepolia. All on-chain interactions—submitting wealth, calling `compareWealth()`, reading results—are Sepolia transactions. The UI connects to Sepolia (e.g. `https://rpc.sepolia.org`) and uses Sepolia Etherscan for links. |
+| **Privacy (encryption & MPC)** | **COTI Testnet** | Encryption of wealth values uses the **PoD encryption service** (POD keys, not local AES). The contract’s privacy logic (MPC comparison, result encryption) is executed via COTI’s infrastructure (inbox, MPC executor) so that **the privacy-sensitive work runs on COTI testnet** while the **state and transactions live on Sepolia**. |
+
+So: **all user-facing interactions are on Sepolia**; the **privacy parts run on COTI testnet**. You get the same millionaire comparison with PoD, on an EVM testnet (Sepolia) you can use with standard tools and explorers.
+
+
 ## 🌐 Live Demo
 
 Experience the app live on the COTI Testnet: [https://millionaire.demo.coti.io](https://millionaire.demo.coti.io)
@@ -72,7 +86,7 @@ The comparison returns:
 ### 1. Clone and Install
 
 ```bash
-cd milionaire
+cd milionaire-pod
 npm install
 ```
 
@@ -87,8 +101,8 @@ cp .env.example .env
 Edit `.env` and fill in your values:
 
 ```env
-# Coti Testnet RPC URL
-VITE_APP_NODE_HTTPS_ADDRESS=https://testnet.coti.io/rpc
+# Sepolia RPC (contract and all UI interactions use Sepolia)
+VITE_APP_NODE_HTTPS_ADDRESS=https://rpc.sepolia.org
 
 # Alice Account (First Millionaire)
 VITE_ALICE_PK=your_alice_private_key
@@ -108,10 +122,12 @@ DEPLOYER_PRIVATE_KEY=your_deployer_private_key
 npm run compile
 ```
 
-### 4. Deploy to COTI Testnet
+### 4. Deploy to Sepolia (PoD)
+
+Deploy the contract to Sepolia (privacy still runs on COTI testnet via PoD):
 
 ```bash
-npm run deploy:coti
+npx hardhat run scripts/deploy-MillionaireComparisonPod.js --network sepolia
 ```
 
 After deployment, copy the contract address and update your `.env` file:
@@ -126,7 +142,7 @@ VITE_CONTRACT_ADDRESS=0x...  # Your deployed contract address
 npm run dev
 ```
 
-The application will be available at `http://localhost:3001`
+The application will be available at `http://localhost:3000` (or the port Vite prints).
 
 
 ## 🚀 Quick Start
@@ -139,10 +155,10 @@ The application will be available at `http://localhost:3001`
    npm run dev
    ```
 
-   The app will run on `http://localhost:3001`
+   The app will run on `http://localhost:3000` (or the port Vite prints)
 
 2. **Open your browser**
-   Navigate to `http://localhost:3001`
+   Navigate to the URL shown in the terminal (e.g. `http://localhost:3000`)
 
 3. **Compare wealth**
    - The app connects to the deployed contract
@@ -184,11 +200,12 @@ See the [Installation](#installation) section for detailed deployment instructio
 ## 🏗 Project Architecture
 
 ```
-milionaire/
+milionaire-pod/
 ├── contracts/
 │   └── MillionaireComparison.sol    # Main smart contract
 ├── scripts/
-│   └── deploy-MillionaireComparison.js  # Deployment script
+│   ├── deploy-MillionaireComparisonPod.js  # Deploy to Sepolia (PoD)
+│   └── verify-etherscan-sepolia.js         # Verify on Etherscan
 ├── src/
 │   ├── components/               # Reusable UI components
 │   │   ├── Button.jsx
@@ -214,11 +231,13 @@ milionaire/
 
 ### Available Scripts
 
-- `npm run dev` - Start development server (port 3001)
+- `npm run dev` - Start development server (default port 3000)
 - `npm run build` - Build for production
 - `npm run preview` - Preview production build
 - `npm run compile` - Compile smart contracts
-- `npm run deploy:coti` - Deploy to COTI testnet
+- `npm run deploy:coti` - Deploy to COTI testnet (legacy)
+- `npx hardhat run scripts/deploy-MillionaireComparisonPod.js --network sepolia` - Deploy to Sepolia (PoD)
+- `npm run verify:sepolia` - Verify contract on Etherscan (Sepolia)
 
 ### Testing the Contract
 
@@ -625,10 +644,10 @@ const clearResult = await wallet.decryptValue(ctResult);
 
 ### Smart Contract Layer
 
-- **Solidity**: ^0.8.19
-- **COTI MPC Library**: `@coti-io/coti-contracts`
+- **Solidity**: ^0.8.19 / 0.8.26
+- **COTI PoD / MPC**: `@coti/pod-sdk`, `@coti-io/coti-contracts`
 - **Hardhat**: Development framework
-- **Network**: COTI Testnet (Chain ID: 7082400)
+- **Contract network**: Sepolia (Chain ID: 11155111); **privacy (encryption, MPC)**: COTI Testnet via PoD
 
 ### Frontend Layer
 
@@ -638,11 +657,13 @@ const clearResult = await wallet.decryptValue(ctResult);
 - **Vite**: ^5.0.0
 - **COTI-Ethers SDK**: `@coti-io/coti-ethers`
 - **Ethers.js**: ^6.0.0
+- **@coti/pod-sdk**: PoD encryption (3p service, POD keys) for wealth inputs
 
 ### Key Dependencies
 
+- **@coti/pod-sdk**: PoD encryption service client (CotiPodCrypto); build from source via `postinstall` if dist is missing
 - **@coti-io/coti-contracts**: MPC operations (MpcCore)
-- **@coti-io/coti-ethers**: Wallet encryption/decryption utilities
+- **@coti-io/coti-ethers**: Wallet and decryption utilities
 
 
 ## 🤝 Contributing
