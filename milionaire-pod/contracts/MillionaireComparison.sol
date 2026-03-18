@@ -3,7 +3,7 @@
 pragma solidity 0.8.19;
 
 import "@coti/pod-sdk/contracts/utils/mpc/MpcCore.sol";
-import { MpcLib } from "@coti/pod-sdk/contracts/mpc/MpcLib.sol";
+import { PodMpcLib } from "@coti/pod-sdk/contracts/mpc/PodMpcLib.sol";
 
 
 /**
@@ -11,7 +11,7 @@ import { MpcLib } from "@coti/pod-sdk/contracts/mpc/MpcLib.sol";
  * @notice Implements Yao's Millionaires' Problem using COTI's MPC (Multi-Party Computation)
  * @dev Two parties (Alice and Bob) can compare their wealth without revealing the actual amounts
  */
-contract MillionaireComparison is MpcLib {
+contract MillionaireComparison is PodMpcLib {
 
     bytes32 public compareRequestIdAlice;
     bytes32 public compareRequestIdBob;
@@ -35,8 +35,28 @@ contract MillionaireComparison is MpcLib {
     address private _bob;
     
     // Events for tracking operations
-    event WealthSubmitted(address indexed user, string role);
-    event ComparisonCompleted(address indexed requester);
+    /// @notice Emitted when a party submits their encrypted wealth
+    /// @param user The submitting address (Alice or Bob)
+    /// @param isAlice True if the user is Alice, false if Bob
+    event WealthSubmitted(address indexed user, bool isAlice);
+
+    /// @notice Emitted when a comparison is requested once both wealths are set
+    /// @param requester The address that triggered the comparison
+    /// @param requestIdAlice MPC request id for Alice's result
+    /// @param requestIdBob MPC request id for Bob's result
+    event ComparisonRequested(
+        address indexed requester,
+        bytes32 requestIdAlice,
+        bytes32 requestIdBob
+    );
+
+    /// @notice Emitted when an MPC result is written and marked ready
+    /// @param user The beneficiary address whose result is now ready
+    /// @param requestId The MPC request id associated with this result
+    event ResultReady(address indexed user, bytes32 requestId);
+
+    /// @notice Emitted when the contract state is reset
+    event ComparisonReset();
     
     /**
      * @notice Initialize the contract with Alice and Bob addresses
@@ -87,7 +107,7 @@ contract MillionaireComparison is MpcLib {
         _aliceWealth = wealth;
         _aliceSet = true;
         
-        emit WealthSubmitted(msg.sender, "Alice");
+        emit WealthSubmitted(msg.sender, true);
     }
 
     /**
@@ -101,7 +121,7 @@ contract MillionaireComparison is MpcLib {
         _bobWealth = wealth;
         _bobSet = true;
         
-        emit WealthSubmitted(msg.sender, "Bob");
+        emit WealthSubmitted(msg.sender, false);
     }
 
     /**
@@ -129,7 +149,7 @@ contract MillionaireComparison is MpcLib {
             this.revealCallback.selector,
             this.onDefaultMpcError.selector);
         
-        emit ComparisonCompleted(msg.sender);
+        emit ComparisonRequested(msg.sender, compareRequestIdAlice, compareRequestIdBob);
     }
 
     function revealCallback(bytes memory data) external onlyInbox {
@@ -138,9 +158,11 @@ contract MillionaireComparison is MpcLib {
         if (requestId == compareRequestIdAlice) {
             _aliceResult = result;
             aliceResultReady = true;
+            emit ResultReady(_alice, requestId);
         } else if (requestId == compareRequestIdBob) {
             _bobResult = result;
             bobResultReady = true;
+            emit ResultReady(_bob, requestId);
         }
     }
 
@@ -204,5 +226,6 @@ contract MillionaireComparison is MpcLib {
         _bobSet = false;
         aliceResultReady = false;
         bobResultReady = false;
+        emit ComparisonReset();
     }
 }
