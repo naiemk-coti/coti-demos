@@ -1,69 +1,83 @@
 import "@nomicfoundation/hardhat-ignition";
 import hardhatEthers from "@nomicfoundation/hardhat-ethers";
 import hardhatVerify from "@nomicfoundation/hardhat-verify";
-import { config as dotenvConfig } from 'dotenv';
+import { config as dotenvConfig } from "dotenv";
 
 dotenvConfig();
+
+/** `coti` (default): native MPC contract. `pod`: MillionaireComparisonPod + @coti/pod-sdk (needs solc 0.8.26). */
+const scope = process.env.HARDHAT_CONTRACTS_SCOPE === "pod" ? "pod" : "coti";
+
+/** COTI testnet RPC (Hardhat does not read Vite envPrefix) */
+const cotiRpc =
+    process.env.COTI_TESTNET_RPC_URL ||
+    process.env.VITE_COTI_RPC_URL ||
+    process.env.VITE_COTI_APP_NODE_HTTPS_ADDRESS ||
+    process.env.VITE_APP_NODE_HTTPS_ADDRESS ||
+    "https://testnet.coti.io/rpc";
 
 /** @type import('hardhat/config').HardhatUserConfig */
 export default {
     plugins: [hardhatEthers, hardhatVerify],
-    solidity: {
-        // Use exact Etherscan-listed build so verification succeeds (see https://etherscan.io/solcversions)
-        compilers: [
-            {
-                version: "0.8.19",
-                settings: {
-                    optimizer: { enabled: true, runs: 200 },
-                    // viaIR: true, // only re‑enable if you really need it AND Etherscan supports it
-                },
-            },
-            {
-                version: "0.8.26",
-                settings: {
-                    optimizer: { enabled: true, runs: 200 },
-                    // viaIR: true, // only re‑enable if you really need it AND Etherscan supports it
-                },
-            },
-        ],
-    },
+    solidity:
+        scope === "pod"
+            ? {
+                  compilers: [
+                      {
+                          version: "0.8.26",
+                          settings: {
+                              optimizer: { enabled: true, runs: 200 },
+                          },
+                      },
+                  ],
+              }
+            : {
+                  compilers: [
+                      {
+                          version: "0.8.19",
+                          settings: {
+                              optimizer: { enabled: true, runs: 200 },
+                          },
+                      },
+                  ],
+              },
     networks: {
         cotiTestnet: {
-            type: 'http',
-            url:
-                process.env.COTI_TESTNET_RPC_URL ||
-                process.env.VITE_APP_NODE_HTTPS_ADDRESS ||
-                "https://testnet.coti.io/rpc",
+            type: "http",
+            url: cotiRpc,
             chainId: 7082400,
             accounts: [
+                process.env.DEPLOYER_PRIVATE_KEY,
                 process.env.VITE_ALICE_PK,
                 process.env.VITE_BOB_PK,
-                process.env.DEPLOYER_PRIVATE_KEY
-            ].filter(Boolean), // Filter out undefined values
-            timeout: 60000,
+            ].filter(Boolean),
+            timeout: 120000,
             gas: 3000000,
-            gasPrice: 10000000000 // 10 gwei
+            gasPrice: 10000000000,
         },
         sepolia: {
             type: "http",
             chainType: "l1",
             url: process.env.SEPOLIA_RPC_URL,
-            accounts: [process.env.SEPOLIA_PRIVATE_KEY],
+            accounts: [
+                process.env.SEPOLIA_PRIVATE_KEY,
+                process.env.DEPLOYER_PRIVATE_KEY,
+            ].filter(Boolean),
         },
     },
     sourcify: {
-        enabled: false
+        enabled: false,
     },
     verify: {
         etherscan: {
-          apiKey: process.env.ETHERSCAN_API_KEY,
-          enabled: true,
+            apiKey: process.env.ETHERSCAN_API_KEY,
+            enabled: true,
         },
     },
     paths: {
-        sources: "./contracts",
+        sources: scope === "pod" ? "./contracts/pod" : "./contracts/coti",
         tests: "./test",
-        cache: "./cache",
-        artifacts: "./artifacts"
-    }
+        cache: scope === "pod" ? "./cache-pod" : "./cache",
+        artifacts: scope === "pod" ? "./artifacts-pod" : "./artifacts",
+    },
 };

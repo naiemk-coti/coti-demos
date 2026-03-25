@@ -10,8 +10,10 @@
     "build": "vite build",
     "preview": "vite preview",
     "compile": "hardhat compile",
-    "compile:coti": "hardhat compile --config hardhat.config.coti.js",
-    "deploy:coti": "hardhat run scripts/deploy-MillionaireComparisonCoti.js --network cotiTestnet --config hardhat.config.coti.js"
+    "compile:pod": "HARDHAT_CONTRACTS_SCOPE=pod hardhat compile",
+    "deploy": "hardhat run scripts/deploy-MillionaireComparison.js --network cotiTestnet",
+    "deploy:coti": "hardhat run scripts/deploy-MillionaireComparison.js --network cotiTestnet",
+    "deploy:pod": "HARDHAT_CONTRACTS_SCOPE=pod hardhat run scripts/deploy-MillionaireComparisonPod.js --network sepolia"
   },
   "dependencies": {
     "@coti-io/coti-contracts": "^1.0.0",

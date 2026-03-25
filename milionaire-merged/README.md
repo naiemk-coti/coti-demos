@@ -20,14 +20,15 @@ See **`.env.example`**. Vite is configured with `envPrefix` so `SEPOLIA_*` and `
 
 ### Deploy the COTI contract (if you do not have one yet)
 
-The default `hardhat compile` in this folder tries to compile both `contracts/coti` and `contracts/pod` and can fail on the PoD contract. For **COTI testnet only**, use:
+`hardhat.config.js` compiles **`contracts/coti` only** (the PoD Solidity under `contracts/pod` is not part of this Hardhat project—it conflicts with `@coti/pod-sdk` pragmas if compiled together).
 
 ```bash
-npm run compile:coti
-npm run deploy:coti
+npm run compile
+npm run deploy
+# or: npm run deploy:coti
 ```
 
-Set **`DEPLOYER_PRIVATE_KEY`** (recommended) or ensure **`VITE_ALICE_PK`** has test COTI for gas. The script prints **`VITE_CONTRACT_ADDRESS_COTI_TESTNET=0x...`** to paste into `.env`. Deploy Sepolia (PoD) from **[`../milionaire-pod`](../milionaire-pod)**.
+Set **`DEPLOYER_PRIVATE_KEY`** (recommended) or ensure **`VITE_ALICE_PK`** has test COTI for gas. The script prints **`VITE_CONTRACT_ADDRESS_COTI_TESTNET=0x...`** to paste into `.env`. For Sepolia (PoD) contract deployment, use a separate Hardhat setup or another repo that compiles the PoD contract cleanly.
 
 ---
 
@@ -255,10 +256,8 @@ milionaire-pod/
 - `npm run dev` - Start development server (default port 3000)
 - `npm run build` - Build for production
 - `npm run preview` - Preview production build
-- `npm run compile` - Compile smart contracts
-- `npm run deploy:coti` - Deploy to COTI testnet (legacy)
-- `npx hardhat run scripts/deploy-MillionaireComparisonPod.js --network sepolia` - Deploy to Sepolia (PoD)
-- `npm run verify:sepolia` - Verify contract on Etherscan (Sepolia)
+- `npm run compile` - Compile `contracts/coti` (MillionaireComparison)
+- `npm run deploy` / `npm run deploy:coti` - Deploy MillionaireComparison to COTI testnet (`scripts/deploy-MillionaireComparison.js`)
 
 ### Testing the Contract
 

@@ -1,17 +1,16 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.19;
+pragma solidity ^0.8.26;
 
-import "@coti/pod-sdk/contracts/utils/mpc/MpcCore.sol";
 import { PodMpcLib } from "@coti/pod-sdk/contracts/mpc/PodMpcLib.sol";
-
+import { ctBool, ctUint64, itUint64 } from "@coti/pod-sdk/contracts/utils/mpc/MpcCore.sol";
 
 /**
- * @title MillionaireComparison
- * @notice Implements Yao's Millionaires' Problem using COTI's MPC (Multi-Party Computation)
- * @dev Two parties (Alice and Bob) can compare their wealth without revealing the actual amounts
+ * @title MillionaireComparisonPod
+ * @notice Implements Yao's Millionaires' Problem using COTI PoD MPC (Privacy on Demand).
+ * @dev Two parties (Alice and Bob) can compare their wealth without revealing the actual amounts.
  */
-contract MillionaireComparison is PodMpcLib {
+contract MillionaireComparisonPod is PodMpcLib {
 
     bytes32 public compareRequestIdAlice;
     bytes32 public compareRequestIdBob;

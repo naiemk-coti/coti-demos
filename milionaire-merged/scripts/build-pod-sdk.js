@@ -2,7 +2,7 @@
  * Build @coti/pod-sdk from source so dist/ exists (GitHub package does not ship dist).
  * Writes src + tsconfig into node_modules/@coti/pod-sdk and runs tsc.
  */
-import { mkdir, writeFile } from 'fs/promises';
+import { mkdir, readFile, writeFile } from 'fs/promises';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
@@ -134,7 +134,30 @@ const TSCONFIG = {
 `,
 };
 
+/** Avoid two MpcCore definitions when both @coti-io/coti-contracts and @coti/pod-sdk are installed. */
+async function patchMpcAbiCodecForMergedRepo() {
+  const path = join(POD_SDK, 'contracts/mpccodec/MpcAbiCodec.sol');
+  try {
+    let content = await readFile(path, 'utf8');
+    const oldImp =
+      'import "@coti-io/coti-contracts/contracts/utils/mpc/MpcCore.sol";';
+    const newImp = 'import "../utils/mpc/MpcCore.sol";';
+    if (content.includes(oldImp)) {
+      content = content.replace(oldImp, newImp);
+      await writeFile(path, content, 'utf8');
+      console.log(
+        'Patched @coti/pod-sdk MpcAbiCodec.sol to use pod-sdk MpcCore (merged-repo compile fix).',
+      );
+    }
+  } catch (e) {
+    if (e && e.code === 'ENOENT') return;
+    throw e;
+  }
+}
+
 async function main() {
+  await patchMpcAbiCodecForMergedRepo();
+
   const distIndex = join(POD_SDK, 'dist', 'index.js');
   try {
     const { readFile } = await import('fs/promises');

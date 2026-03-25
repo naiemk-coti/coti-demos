@@ -15,9 +15,9 @@ yarn-error.log*
 dist/
 build/
 artifacts/
+artifacts-pod/
 cache/
-artifacts-coti/
-cache-coti/
+cache-pod/
 package-lock.json
 
 # IDE
