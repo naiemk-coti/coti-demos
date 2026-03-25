@@ -86,10 +86,10 @@ export function useMillionaireContractCoti() {
     const { aliceWallet, bobWallet } = useMemo(() => {
         const provider = new ethers.JsonRpcProvider(rpcUrl);
 
-        const alicePK = readEnv('VITE_ALICE_PK');
-        const aliceAesKey = readEnv('VITE_ALICE_AES_KEY');
-        const bobPK = readEnv('VITE_BOB_PK');
-        const bobAesKey = readEnv('VITE_BOB_AES_KEY');
+        const alicePK = readEnv('VITE_ALICE_PK_FOR_COTIA');
+        const aliceAesKey = readEnv('VITE_ALICE_AES_KEY_FOR_COTI');
+        const bobPK = readEnv('VITE_BOB_PK_FOR_COTI');
+        const bobAesKey = readEnv('VITE_BOB_AES_KEY_FOR_COTI');
 
         let alice = null;
         let bob = null;
@@ -149,7 +149,9 @@ export function useMillionaireContractCoti() {
 
     const submitAliceWealth = async (wealth) => {
         if (!aliceWallet) {
-            throw new Error('Alice wallet not configured. Please set VITE_ALICE_PK and VITE_ALICE_AES_KEY in .env');
+            throw new Error(
+                'Alice wallet not configured. Please set VITE_ALICE_PK_FOR_COTIA and VITE_ALICE_AES_KEY_FOR_COTI in .env'
+            );
         }
 
         const wealthInt = parseInt(wealth, 10);
@@ -187,7 +189,9 @@ export function useMillionaireContractCoti() {
 
     const submitBobWealth = async (wealth) => {
         if (!bobWallet) {
-            throw new Error('Bob wallet not configured. Please set VITE_BOB_PK and VITE_BOB_AES_KEY in .env');
+            throw new Error(
+                'Bob wallet not configured. Please set VITE_BOB_PK_FOR_COTI and VITE_BOB_AES_KEY_FOR_COTI in .env'
+            );
         }
 
         const wealthInt = parseInt(wealth, 10);

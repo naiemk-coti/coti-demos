@@ -48,8 +48,8 @@ export default {
             chainId: 7082400,
             accounts: [
                 process.env.DEPLOYER_PRIVATE_KEY,
-                process.env.VITE_ALICE_PK,
-                process.env.VITE_BOB_PK,
+                process.env.VITE_ALICE_PK_FOR_COTIA,
+                process.env.VITE_BOB_PK_FOR_COTI,
             ].filter(Boolean),
             timeout: 120000,
             gas: 3000000,

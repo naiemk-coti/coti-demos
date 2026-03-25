@@ -28,7 +28,7 @@ npm run deploy
 # or: npm run deploy:coti
 ```
 
-Set **`DEPLOYER_PRIVATE_KEY`** (recommended) or ensure **`VITE_ALICE_PK`** has test COTI for gas. The script prints **`VITE_CONTRACT_ADDRESS_COTI_TESTNET=0x...`** to paste into `.env`. For Sepolia (PoD) contract deployment, use a separate Hardhat setup or another repo that compiles the PoD contract cleanly.
+Set **`DEPLOYER_PRIVATE_KEY`** (recommended) or ensure **`VITE_ALICE_PK_FOR_COTIA`** has test COTI for gas. The script prints **`VITE_CONTRACT_ADDRESS_COTI_TESTNET=0x...`** to paste into `.env`. For Sepolia (PoD) contract deployment, use a separate Hardhat setup or another repo that compiles the PoD contract cleanly.
 
 ---
 

@@ -5,7 +5,7 @@
  *
  * Prerequisites:
  * - `npm run compile` (Hardhat compiles contracts/coti only)
- * - `.env`: VITE_ALICE_PK, VITE_BOB_PK; DEPLOYER_PRIVATE_KEY recommended as first signer
+ * - `.env`: VITE_ALICE_PK_FOR_COTIA, VITE_BOB_PK_FOR_COTI; DEPLOYER_PRIVATE_KEY recommended as first signer
  * - Funded deployer on COTI testnet
  *
  * After deploy, set VITE_CONTRACT_ADDRESS_COTI_TESTNET in .env for the UI.
@@ -24,7 +24,7 @@ async function main() {
     const signers = await ethers.getSigners();
     if (signers.length === 0) {
         throw new Error(
-            "No signers. Set DEPLOYER_PRIVATE_KEY and/or VITE_ALICE_PK in .env (see .env.example)."
+            "No signers. Set DEPLOYER_PRIVATE_KEY and/or VITE_ALICE_PK_FOR_COTIA in .env (see .env.example)."
         );
     }
     const deployer = signers[0];
@@ -33,11 +33,13 @@ async function main() {
     const balance = await ethers.provider.getBalance(deployer.address);
     console.log("Deployer balance:", ethers.formatEther(balance));
 
-    const alicePrivateKey = process.env.VITE_ALICE_PK;
-    const bobPrivateKey = process.env.VITE_BOB_PK;
+    const alicePrivateKey = process.env.VITE_ALICE_PK_FOR_COTIA;
+    const bobPrivateKey = process.env.VITE_BOB_PK_FOR_COTI;
 
     if (!alicePrivateKey || !bobPrivateKey) {
-        console.error("Set VITE_ALICE_PK and VITE_BOB_PK (participant addresses stored in the contract).");
+        console.error(
+            "Set VITE_ALICE_PK_FOR_COTIA and VITE_BOB_PK_FOR_COTI (participant addresses stored in the contract)."
+        );
         process.exit(1);
     }
 
