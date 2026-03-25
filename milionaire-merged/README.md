@@ -11,7 +11,7 @@ A decentralized implementation of **Yao's Millionaires' Problem** using COTI's G
 
 ## Unified UI in this folder (`milionaire-merged`)
 
-Run `npm install` and `npm run dev` from **this directory**. The home screen is a **network selector** (COTI Testnet vs Sepolia). It lazy-loads the UIs from **[`../milionaire`](../milionaire)** (`/coti`) and **[`../milionaire-pod`](../milionaire-pod)** (`/sepolia`). Each route uses its own env keys — no runtime remapping:
+Run `npm install` and `npm run dev` from **this directory**. The home screen is a **network selector** (COTI Testnet vs Sepolia). The UI and hooks live in **`src/`** here: shared **`components/`**, **`config/`**, **`pages/MillionaireHomePage.jsx`**, plus **`hooks/useMillionaireContractCoti.js`** and **`hooks/useMillionaireContractPod.js`**. The sibling folders `milionaire` and `milionaire-pod` are no longer required for the merged app (you can remove them later once you no longer need them for reference).
 
 - **`/coti`** — `VITE_CONTRACT_ADDRESS_COTI_TESTNET`, `COTI_TESTNET_RPC_URL`
 - **`/sepolia`** — `VITE_CONTRACT_ADDRESS_SEPOLIA`, `SEPOLIA_RPC_URL`

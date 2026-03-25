@@ -1,8 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
-import '@experience-coti/index.css';
-import '@experience-coti/components/transitions.css';
+import './index.css';
+import './components/transitions.css';
 import { Buffer } from 'buffer';
 
 window.Buffer = Buffer;

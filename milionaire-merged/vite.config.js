@@ -4,20 +4,15 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(__dirname, '..');
 const nm = (pkg) => path.join(__dirname, 'node_modules', pkg);
 
 export default defineConfig({
-    // Expose SEPOLIA_* and COTI_* keys from .env to import.meta.env (in addition to VITE_*)
     envPrefix: ['VITE_', 'SEPOLIA_', 'COTI_'],
     plugins: [react()],
     server: {
         port: 3000,
         strictPort: false,
         host: true,
-        fs: {
-            allow: [repoRoot],
-        },
     },
     define: {
         global: 'globalThis',
@@ -25,8 +20,6 @@ export default defineConfig({
     resolve: {
         dedupe: ['react', 'react-dom', 'styled-components'],
         alias: {
-            '@experience-coti': path.join(repoRoot, 'milionaire/src'),
-            '@experience-pod': path.join(repoRoot, 'milionaire-pod/src'),
             react: nm('react'),
             'react-dom': nm('react-dom'),
             'react-router-dom': nm('react-router-dom'),

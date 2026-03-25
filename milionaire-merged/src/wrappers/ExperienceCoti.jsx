@@ -1,7 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import styled from 'styled-components';
 
-const CotiHomePage = lazy(() => import('@experience-coti/pages/HomePage.jsx'));
+const CotiHomePage = lazy(() => import('../pages/CotiHomePage.jsx'));
 
 const Fallback = styled.div`
     min-height: 60vh;

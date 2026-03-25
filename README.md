@@ -69,6 +69,13 @@ Same Millionaires' Problem example, built with **COTI Privacy on Demand (PoD)**.
 
 ---
 
+### 💰 Millionaires' Problem — unified UI (COTI or Sepolia)
+**Source Code:** [/milionaire-merged](./milionaire-merged)
+
+Single dev server with a **network dropdown** for **COTI Testnet** vs **Sepolia (PoD)**. UI and hooks are **vendored under** [`milionaire-merged/src`](./milionaire-merged/src) (shared components + two contract hooks). Configure `VITE_CONTRACT_ADDRESS_COTI_TESTNET` + `COTI_TESTNET_RPC_URL` and `VITE_CONTRACT_ADDRESS_SEPOLIA` + `SEPOLIA_RPC_URL`; see `milionaire-merged/.env.example`.
+
+---
+
 ### 🗳️ Encrypted Voting
 **Live Demo:** [https://vote.demo.coti.io](https://vote.demo.coti.io)  
 **Source Code:** [/vote](./vote)

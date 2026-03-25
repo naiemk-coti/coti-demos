@@ -1,8 +1,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from 'styled-components';
-import { GlobalBackground } from '@experience-coti/components/GlobalBackground.jsx';
-import { light as theme } from '@experience-coti/config/theme.js';
+import { GlobalBackground } from './components/GlobalBackground.jsx';
+import { light as theme } from './config/theme.js';
 import ChainSelectPage from './pages/ChainSelectPage.jsx';
 import ExperienceCoti from './wrappers/ExperienceCoti.jsx';
 import ExperiencePod from './wrappers/ExperiencePod.jsx';

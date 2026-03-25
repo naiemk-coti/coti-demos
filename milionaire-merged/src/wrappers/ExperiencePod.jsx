@@ -1,7 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import styled from 'styled-components';
 
-const PodHomePage = lazy(() => import('@experience-pod/pages/HomePage.jsx'));
+const PodHomePage = lazy(() => import('../pages/PodHomePage.jsx'));
 
 const Fallback = styled.div`
     min-height: 60vh;
