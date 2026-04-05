@@ -1,0 +1,72 @@
+/* Smooth transitions to prevent visual flash */
+.content-transition-enter {
+    opacity: 0;
+    transform: translateY(8px);
+}
+
+.content-transition-enter-active {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 200ms ease-out, transform 200ms ease-out;
+}
+
+.content-transition-exit {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.content-transition-exit-active {
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity 150ms ease-in, transform 150ms ease-in;
+}
+
+button {
+    transition: all 150ms ease-out !important;
+    will-change: transform, opacity, background-color;
+}
+
+button:hover {
+    transform: translateY(-1px);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+.component-mount {
+    animation: fadeInUp 300ms ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.interactive-element {
+    contain: layout style;
+    will-change: transform;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 0.7;
+    }
+    50% {
+        opacity: 0.4;
+    }
+    100% {
+        opacity: 0.7;
+    }
+}
+
+.loading-placeholder {
+    opacity: 0.7;
+    animation: pulse 1.5s ease-in-out infinite;
+}
