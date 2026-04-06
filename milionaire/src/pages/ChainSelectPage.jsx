@@ -1,93 +1,113 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
+import { AppContainer, CardsContainer, Card, FormGroup, ButtonGroup } from '../components/styles.js';
 
-const Shell = styled.div`
-    min-height: 70vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem 1rem;
-    gap: 1.5rem;
-`;
-
-const Title = styled.h1`
-    margin: 0;
-    font-size: 1.35rem;
-    font-weight: 600;
-    color: ${(p) => p.theme.colors.text.default};
+const HeaderTitle = styled.h1`
+    color: ${(props) => props.theme.colors.text.default} !important;
+    font-size: 1.5rem;
+    font-weight: 700;
     text-align: center;
+    margin: 0 0 0.5rem 0;
+
+    ${({ theme }) => theme.mediaQueries.small} {
+        font-size: 1.2rem;
+    }
 `;
 
-const Sub = styled.p`
-    margin: 0;
-    max-width: 32rem;
-    font-size: 0.9rem;
+const HeaderSubTitle = styled.p`
+    margin: 0 0 1.25rem 0;
+    font-size: 0.95rem;
+    font-weight: 400;
     line-height: 1.5;
-    color: ${(p) => p.theme.colors.text.default};
-    opacity: 0.9;
     text-align: center;
+    color: ${(props) => props.theme.colors.text.default} !important;
+    opacity: 0.9;
+
+    ${({ theme }) => theme.mediaQueries.small} {
+        font-size: 0.85rem;
+    }
 `;
 
-const Control = styled.div`
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.75rem;
-    width: min(100%, 22rem);
-`;
-
-const Label = styled.label`
-    font-size: 0.75rem;
+const FormLabel = styled.label`
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: ${(p) => p.theme.colors.text.default};
+    color: ${(props) => props.theme.colors.text.default};
+    font-size: 0.85rem;
+    white-space: nowrap;
+    flex-shrink: 0;
 `;
 
-const Select = styled.select`
-    padding: 0.65rem 0.75rem;
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    background: rgba(0, 0, 0, 0.35);
-    color: ${(p) => p.theme.colors.text.default};
-    font-size: 1rem;
+const SelectField = styled.select`
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid
+        ${(props) =>
+            props.theme.colors.text.default === '#FFFFFF'
+                ? 'rgba(255, 255, 255, 0.2)'
+                : 'rgba(0, 0, 0, 0.2)'};
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-family: ${({ theme }) => theme.fonts.default};
+    transition: border-color 0.3s ease, background-color 0.3s ease;
+    background-color: ${(props) =>
+        props.theme.colors.text.default === '#FFFFFF'
+            ? 'rgba(255, 255, 255, 0.1)'
+            : 'rgba(0, 0, 0, 0.05)'};
+    color: ${(props) => props.theme.colors.text.default};
     cursor: pointer;
 
     &:focus {
-        outline: 2px solid ${(p) => p.theme.colors.primary.default};
-        outline-offset: 2px;
+        outline: none;
+        border-color: ${(props) => props.theme.colors.primary.default};
+        box-shadow: 0 0 0 3px ${(props) => props.theme.colors.secondary.default10};
+        background-color: ${(props) =>
+            props.theme.colors.text.default === '#FFFFFF'
+                ? 'rgba(255, 255, 255, 0.15)'
+                : 'rgba(0, 0, 0, 0.08)'};
     }
 `;
 
-const Button = styled.button`
-    padding: 0.75rem 1.25rem;
+const PrimaryButton = styled.button`
+    background-color: #1e29f6;
     border: none;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 600;
+    border-radius: 12px;
+    padding: 0.5rem 1rem;
+    font-family: ${({ theme }) => theme.fonts.default};
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #ffffff;
+    flex: 1;
     cursor: pointer;
-    background: ${(p) => p.theme.colors.primary.default};
-    color: #0a0a0a;
+    transition: all 0.2s ease-in-out;
 
-    &:hover {
-        filter: brightness(1.05);
+    &:hover:not(:disabled) {
+        background-color: rgba(30, 41, 246, 0.8);
+        transform: translateY(-1px);
+    }
+
+    &:active:not(:disabled) {
+        transform: translateY(0);
     }
 
     &:disabled {
-        opacity: 0.5;
         cursor: not-allowed;
+        opacity: 0.5;
+        background-color: rgba(30, 41, 246, 0.8);
     }
 `;
 
 const Hint = styled.p`
-    margin: 0;
+    margin: 1.25rem 0 0 0;
     font-size: 0.75rem;
-    opacity: 0.75;
-    color: ${(p) => p.theme.colors.text.default};
+    line-height: 1.5;
     text-align: center;
-    max-width: 28rem;
+    color: ${(props) => props.theme.colors.text.default} !important;
+    opacity: 0.85;
+
+    code {
+        font-size: 0.7rem;
+        word-break: break-all;
+    }
 `;
 
 export default function ChainSelectPage() {
@@ -103,32 +123,47 @@ export default function ChainSelectPage() {
     };
 
     return (
-        <Shell>
-            <Title>Choose network</Title>
-            <Sub>
-                Same Millionaires&apos; Problem demo: run it natively on COTI Testnet, or on Ethereum Sepolia with
-                Privacy on Demand (PoD) for encryption and MPC while the contract lives on Sepolia.
-            </Sub>
-            <Control>
-                <Label htmlFor="chain-select">Network</Label>
-                <Select
-                    id="chain-select"
-                    value={chain}
-                    onChange={(e) => setChain(e.target.value)}
-                    aria-label="Select COTI Testnet or Sepolia"
-                >
-                    <option value="coti">COTI Testnet (native MPC)</option>
-                    <option value="sepolia">Sepolia (Privacy on Demand)</option>
-                </Select>
-                <Button type="button" onClick={openDemo}>
-                    Open demo
-                </Button>
-            </Control>
-            <Hint>
-                COTI: <code>VITE_CONTRACT_ADDRESS_COTI_TESTNET</code> + <code>COTI_TESTNET_RPC_URL</code>. Sepolia:{' '}
-                <code>VITE_CONTRACT_ADDRESS_SEPOLIA</code> + <code>SEPOLIA_RPC_URL</code>. See{' '}
-                <code>.env.example</code>.
-            </Hint>
-        </Shell>
+        <AppContainer>
+            <CardsContainer
+                style={{
+                    marginTop: 0,
+                    marginBottom: '2rem',
+                    maxWidth: '420px',
+                    width: '100%',
+                }}
+            >
+                <Card $maxWidth="100%" $width="100%" style={{ padding: '1.5rem', minWidth: 0 }}>
+                    <HeaderTitle>Choose network</HeaderTitle>
+                    <HeaderSubTitle>
+                        Same Millionaires&apos; Problem demo: run it natively on COTI Testnet, or on Ethereum Sepolia with
+                        Privacy on Demand (PoD) for encryption and MPC while the contract lives on Sepolia.
+                    </HeaderSubTitle>
+                    <FormGroup
+                        style={{
+                            flexDirection: 'column',
+                            alignItems: 'stretch',
+                            gap: '0.5rem',
+                            marginBottom: '1rem',
+                        }}
+                    >
+                        <FormLabel htmlFor="chain-select">Network</FormLabel>
+                        <SelectField
+                            id="chain-select"
+                            value={chain}
+                            onChange={(e) => setChain(e.target.value)}
+                            aria-label="Select COTI Testnet or Sepolia"
+                        >
+                            <option value="coti">COTI Testnet (native MPC)</option>
+                            <option value="sepolia">Sepolia (Privacy on Demand)</option>
+                        </SelectField>
+                    </FormGroup>
+                    <ButtonGroup style={{ justifyContent: 'center' }}>
+                        <PrimaryButton type="button" onClick={openDemo}>
+                            Open demo
+                        </PrimaryButton>
+                    </ButtonGroup>
+                </Card>
+            </CardsContainer>
+        </AppContainer>
     );
 }
