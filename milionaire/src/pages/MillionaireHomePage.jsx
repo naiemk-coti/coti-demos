@@ -466,9 +466,12 @@ export function MillionaireHomePage({ useContractHook, network }) {
     const [showComparisonModal, setShowComparisonModal] = useState(false)
     const [comparisonResult, setComparisonResult] = useState(null)
 
+    // Re-run when wallets hydrate (useLayoutEffect in contract hooks) or contract address changes.
     useEffect(() => {
         checkContractConnection()
-    }, [])
+        // checkContractConnection uses hook methods; deps capture wallet / contract readiness.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [aliceWallet, bobWallet, contractAddress, network])
 
     const checkContractConnection = async () => {
         setConnectionStatus('🔄 Checking contract connection...')
@@ -482,8 +485,10 @@ export function MillionaireHomePage({ useContractHook, network }) {
                 setConnectionStatus(`❌ Contract address not configured. Set ${hint} in .env`)
                 return
             }
-            if (!aliceWallet || !bobWallet) {
-                setConnectionStatus('❌ Wallets not configured. Please set wallet keys in .env')
+            if (!aliceWallet) {
+                setConnectionStatus(
+                    `❌ Alice wallet not configured. Set it in .env (AES key only needed for submit/compare).`
+                )
                 return
             }
 
@@ -498,7 +503,13 @@ export function MillionaireHomePage({ useContractHook, network }) {
                 setBobStatus('')
             }
 
-            setConnectionStatus('')
+            if (!bobWallet) {
+                setConnectionStatus(
+                    `⚠️ Bob wallet not configured. Set it in .env. You can still reset the contract with Alice.`
+                )
+            } else {
+                setConnectionStatus('')
+            }
         } catch (error) {
             console.error('Error connecting to contract:', error)
             setConnectionStatus('❌ Error connecting to contract: ' + error.message)

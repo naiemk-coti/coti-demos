@@ -1,8 +1,9 @@
-import { useMemo } from 'react';
+import { useState, useEffect, useLayoutEffect } from 'react';
 import { ethers } from 'ethers';
 import { Wallet } from '@coti-io/coti-ethers';
 import { CotiPodCrypto, DataType } from '@coti/pod-sdk';
 import { readEnv } from '../lib/envRead.js';
+import { tryGetPrivateKey } from '../lib/KeyUtils.js';
 import { estimateMillionairePodCompareWealthFee } from '../lib/podFeeUtils.ts';
 
 // Retry utility for handling transient RPC errors
@@ -100,33 +101,71 @@ export function useMillionaireContractPod() {
         readEnv('SEPOLIA_RPC_URL') ||
         readEnv('VITE_APP_NODE_HTTPS_ADDRESS', 'https://rpc.sepolia.org');
 
-    // Create wallets for Alice and Bob
-    const { aliceWallet, bobWallet } = useMemo(() => {
+    const [aliceWallet, setAliceWallet] = useState(null);
+    const [bobWallet, setBobWallet] = useState(null);
+
+    const envGet = (k) => readEnv(k);
+
+    // useLayoutEffect so wallet state exists before child passive useEffects (e.g. connection check on homepage).
+    useLayoutEffect(() => {
         const provider = new ethers.JsonRpcProvider(rpcUrl);
-
-        const alicePK = readEnv('VITE_ALICE_PK');
-        const aliceAesKey = readEnv('VITE_ALICE_AES_KEY');
-        const bobPK = readEnv('VITE_BOB_PK');
-        const bobAesKey = readEnv('VITE_BOB_AES_KEY');
-
         let alice = null;
         let bob = null;
 
-        if (alicePK && aliceAesKey) {
-            alice = new Wallet(alicePK, provider);
-            alice.setUserOnboardInfo({ aesKey: aliceAesKey });
+        try {
+            const pk = tryGetPrivateKey('VITE_ALICE_PK', envGet);
+            if (pk) {
+                alice = new Wallet(pk, provider);
+                const aes = readEnv('VITE_ALICE_AES_KEY');
+                if (aes) {
+                    alice.setUserOnboardInfo({ aesKey: aes });
+                }
+            }
+        } catch (e) {
+            console.error('Alice wallet init failed:', e);
         }
 
-        if (bobPK && bobAesKey) {
-            bob = new Wallet(bobPK, provider);
-            bob.setUserOnboardInfo({ aesKey: bobAesKey });
+        try {
+            const pk = tryGetPrivateKey('VITE_BOB_PK', envGet);
+            if (pk) {
+                bob = new Wallet(pk, provider);
+                const aes = readEnv('VITE_BOB_AES_KEY');
+                if (aes) {
+                    bob.setUserOnboardInfo({ aesKey: aes });
+                }
+            }
+        } catch (e) {
+            console.error('Bob wallet init failed:', e);
         }
 
-        return {
-            aliceWallet: alice,
-            bobWallet: bob
-        };
+        setAliceWallet(alice);
+        setBobWallet(bob);
     }, [rpcUrl]);
+
+    /** Alice signer for reset: use state, or rebuild from env (e.g. after a partial wallet init). */
+    const getAliceSignerOrThrow = () => {
+        if (aliceWallet) {
+            return aliceWallet;
+        }
+        let pk;
+        try {
+            pk = tryGetPrivateKey('VITE_ALICE_PK', envGet);
+        } catch (e) {
+            throw new Error(
+                `Alice wallet not configured: ${e.message}. Check VITE_ALICE_PK, ENC_K, and v2: ciphertext.`
+            );
+        }
+        if (!pk) {
+            throw new Error(
+                'Alice wallet not configured. Set VITE_ALICE_PK in .env (and ENC_K if the value is v2:… encrypted).'
+            );
+        }
+        try {
+            return new Wallet(pk, new ethers.JsonRpcProvider(rpcUrl));
+        } catch (e) {
+            throw new Error(`Alice wallet not configured: invalid private key (${e.message})`);
+        }
+    };
 
     const getContract = (wallet) => {
         if (!contractAddress) {
@@ -157,7 +196,12 @@ export function useMillionaireContractPod() {
 
     const submitAliceWealth = async (wealth) => {
         if (!aliceWallet) {
-            throw new Error('Alice wallet not configured. Please set VITE_ALICE_PK and VITE_ALICE_AES_KEY in .env');
+            throw new Error('Alice wallet not configured. Please set VITE_ALICE_PK in .env');
+        }
+        if (!readEnv('VITE_ALICE_AES_KEY')) {
+            throw new Error(
+                'Alice AES key not configured. Set VITE_ALICE_AES_KEY in .env to submit wealth and decrypt comparison results.'
+            );
         }
 
         const wealthInt = parseInt(wealth, 10);
@@ -195,7 +239,12 @@ export function useMillionaireContractPod() {
 
     const submitBobWealth = async (wealth) => {
         if (!bobWallet) {
-            throw new Error('Bob wallet not configured. Please set VITE_BOB_PK and VITE_BOB_AES_KEY in .env');
+            throw new Error('Bob wallet not configured. Please set VITE_BOB_PK in .env');
+        }
+        if (!readEnv('VITE_BOB_AES_KEY')) {
+            throw new Error(
+                'Bob AES key not configured. Set VITE_BOB_AES_KEY in .env to submit wealth and decrypt comparison results.'
+            );
         }
 
         const wealthInt = parseInt(wealth, 10);
@@ -276,6 +325,9 @@ export function useMillionaireContractPod() {
         if (!aliceWallet) {
             throw new Error('Alice wallet not configured');
         }
+        if (!readEnv('VITE_ALICE_AES_KEY')) {
+            throw new Error('Alice AES key not configured (required to decrypt comparison result)');
+        }
 
         const contract = getContract(aliceWallet);
 
@@ -308,6 +360,9 @@ export function useMillionaireContractPod() {
     const getBobComparisonResult = async (onWaiting) => {
         if (!bobWallet) {
             throw new Error('Bob wallet not configured');
+        }
+        if (!readEnv('VITE_BOB_AES_KEY')) {
+            throw new Error('Bob AES key not configured (required to decrypt comparison result)');
         }
 
         const contract = getContract(bobWallet);
@@ -477,11 +532,8 @@ export function useMillionaireContractPod() {
     };
 
     const resetContract = async () => {
-        if (!aliceWallet) {
-            throw new Error('Alice wallet not configured');
-        }
-
-        const contract = getContract(aliceWallet);
+        const signer = getAliceSignerOrThrow();
+        const contract = getContract(signer);
 
         return await retryWithBackoff(async () => {
             const tx = await contract.reset({ gasLimit: 200000 });

@@ -1,21 +1,23 @@
 /**
  * Deploy `MillionaireComparisonPod` from contracts/pod to Sepolia (or another L1 with PoD).
  *
- * Constructor: (address inbox, address mpcExecutor, uint256 cotiChainId, address alice, address bob)
+ * Constructor: none (inbox, MPC executor, COTI chain id are hardcoded in the contract).
+ * Call `configurePlayers(alice, bob)` after deploy.
+ *
+ * Hardcoded in contract:
+ * - inbox: 0xfa158f9e49c8bb77f971c3630ebcd23a8a88d14e
+ * - mpc executor: 0xc76aae4f3810fbbd5d96b92defebe0034405ad9c
+ * - cotiChainId: 7082400
  *
  * Prerequisites:
- * - `HARDHAT_CONTRACTS_SCOPE=pod npm run compile` (or use `npm run compile:pod`)
- * - `.env`: SEPOLIA_PRIVATE_KEY (or DEPLOYER_PRIVATE_KEY), VITE_ALICE_PK, VITE_BOB_PK, SEPOLIA_RPC_URL
- * - Optional: POD_INBOX_ADDRESS, POD_MPC_EXECUTOR_ADDRESS, POD_COTI_CHAIN_ID
+ * - `HARDHAT_CONTRACTS_SCOPE=pod npm run compile` (or `npm run compile:pod`)
+ * - `.env`: SEPOLIA_PRIVATE_KEY (or DEPLOYER_PRIVATE_KEY), VITE_ALICE_PK, VITE_BOB_PK, ENC_K (for v2: keys), SEPOLIA_RPC_URL
  *
  * After deploy, set VITE_CONTRACT_ADDRESS_SEPOLIA in .env for the UI.
  */
 import { network } from "hardhat";
 import { config as dotenvConfig } from "dotenv";
-
-const DEFAULT_INBOX = "0xfa158f9e49c8bb77f971c3630ebcd23a8a88d14e";
-const DEFAULT_MPC_EXECUTOR = "0xc76aae4f3810fbbd5d96b92defebe0034405ad9c";
-const DEFAULT_COTI_CHAIN_ID = "7082400";
+import { getPrivateKey } from "../src/lib/KeyUtils.js";
 
 dotenvConfig();
 
@@ -28,8 +30,9 @@ async function main() {
         process.exit(1);
     }
 
-    const { ethers } = await network.connect();
-    const networkName = network.name;
+    const connection = await network.connect();
+    const { ethers } = connection;
+    const networkName = connection.networkName;
 
     console.log("Deploying MillionaireComparisonPod to", networkName, "...");
 
@@ -40,43 +43,29 @@ async function main() {
         );
     }
     const deployer = signers[0];
-    console.log("Deployer:", deployer.address);
+    console.log("Deployer (owner):", deployer.address);
 
     const balance = await ethers.provider.getBalance(deployer.address);
     console.log("Deployer balance:", ethers.formatEther(balance), "ETH");
 
-    const alicePrivateKey = process.env.VITE_ALICE_PK;
-    const bobPrivateKey = process.env.VITE_BOB_PK;
-
-    if (!alicePrivateKey || !bobPrivateKey) {
-        console.error("Set VITE_ALICE_PK and VITE_BOB_PK (participant addresses stored in the contract).");
+    if (!process.env.VITE_ALICE_PK?.trim() || !process.env.VITE_BOB_PK?.trim()) {
+        console.error(
+            "Set VITE_ALICE_PK and VITE_BOB_PK (same as the UI: v2: encrypted with ENC_K, or 64-char hex)."
+        );
         process.exit(1);
     }
 
+    const alicePrivateKey = getPrivateKey("VITE_ALICE_PK");
+    const bobPrivateKey = getPrivateKey("VITE_BOB_PK");
     const aliceAddress = new ethers.Wallet(alicePrivateKey).address;
     const bobAddress = new ethers.Wallet(bobPrivateKey).address;
     console.log("Alice:", aliceAddress);
     console.log("Bob:  ", bobAddress);
 
-    const inboxAddress = process.env.POD_INBOX_ADDRESS || DEFAULT_INBOX;
-    const mpcExecutorAddress = process.env.POD_MPC_EXECUTOR_ADDRESS || DEFAULT_MPC_EXECUTOR;
-    const cotiChainId = BigInt(process.env.POD_COTI_CHAIN_ID || DEFAULT_COTI_CHAIN_ID);
-
-    console.log("POD inbox:", inboxAddress);
-    console.log("POD mpcExecutor:", mpcExecutorAddress);
-    console.log("POD cotiChainId:", cotiChainId.toString());
-
     const Factory = await ethers.getContractFactory("MillionaireComparisonPod");
-    const contract = await Factory.deploy(
-        inboxAddress,
-        mpcExecutorAddress,
-        cotiChainId,
-        aliceAddress,
-        bobAddress,
-        {
-            gasLimit: 4_000_000,
-        }
-    );
+    const contract = await Factory.deploy({
+        gasLimit: 4_000_000,
+    });
 
     console.log("Deployment tx:", contract.deploymentTransaction()?.hash);
     await contract.waitForDeployment();
@@ -87,6 +76,13 @@ async function main() {
         console.error("No bytecode at address — deployment failed.");
         process.exit(1);
     }
+
+    console.log("Configuring players…");
+    const tx = await contract.configurePlayers(aliceAddress, bobAddress, {
+        gasLimit: 500_000,
+    });
+    await tx.wait();
+    console.log("configurePlayers tx:", tx.hash);
 
     console.log("\n✅ MillionaireComparisonPod deployed at:", address);
     console.log("\nAdd to .env for the app (Sepolia / PoD route):");

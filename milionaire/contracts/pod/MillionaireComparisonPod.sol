@@ -30,9 +30,14 @@ contract MillionaireComparisonPod is PodLib64 {
     bool public aliceResultReady;
     bool public bobResultReady;
     
-    // Store addresses for consistent encryption
+    // Store addresses for consistent encryption (set via configurePlayers)
     address private _alice;
     address private _bob;
+
+    /// @dev Hardcoded PoD routing (COTI testnet linkage from Sepolia).
+    address private constant _INBOX = 0xFa158f9e49C8bb77f971c3630EbCD23a8a88D14E;
+    address private constant _MPC_EXECUTOR = 0xC76aaE4F3810fBBd5d96b92DEFeBE0034405Ad9c;
+    uint256 private constant _COTI_CHAIN_ID = 7082400;
 
     // Events for tracking operations
     /// @notice Emitted when a party submits their encrypted wealth
@@ -57,24 +62,27 @@ contract MillionaireComparisonPod is PodLib64 {
 
     /// @notice Emitted when the contract state is reset
     event ComparisonReset();
-    
+
+    /// @notice Emitted when Alice and Bob are configured (owner, once).
+    event PlayersConfigured(address indexed alice, address indexed bob);
+
+    constructor() PodLibBase(msg.sender) {
+        setInbox(_INBOX);
+        configureCoti(_MPC_EXECUTOR, _COTI_CHAIN_ID);
+    }
+
     /**
-     * @notice Initialize the contract with Alice and Bob addresses
-     * @param alice Address of the first party (Alice)
-     * @param bob Address of the second party (Bob)
+     * @notice One-time setup of Alice and Bob (only owner, before any wealth is set).
      */
-    constructor(address inbox, address mpcExecutor, uint256 cotiChainId, address alice, address bob)
-        PodLibBase(msg.sender)
-    {
+    function configurePlayers(address alice, address bob) external onlyOwner {
+        require(_alice == address(0) && _bob == address(0), "Players already configured");
         require(alice != address(0) && bob != address(0), "Invalid addresses");
         require(alice != bob, "Alice and Bob must be different");
-        
+
         _alice = alice;
         _bob = bob;
-        _aliceSet = false;
-        _bobSet = false;
-        setInbox(inbox);
-        configureCoti(mpcExecutor, cotiChainId);
+
+        emit PlayersConfigured(alice, bob);
     }
 
     /**
@@ -103,6 +111,7 @@ contract MillionaireComparisonPod is PodLib64 {
      * @param wealth Encrypted input (itUint64) representing Alice's wealth
      */
     function setAliceWealth(itUint64 calldata wealth) external {
+        require(_alice != address(0), "Players not configured");
         require(msg.sender == _alice, "Only Alice can set her wealth");
         require(!_aliceSet, "Alice's wealth already set");
         
@@ -117,6 +126,7 @@ contract MillionaireComparisonPod is PodLib64 {
      * @param wealth Encrypted input (itUint64) representing Bob's wealth
      */
     function setBobWealth(itUint64 calldata wealth) external {
+        require(_bob != address(0), "Players not configured");
         require(msg.sender == _bob, "Only Bob can set his wealth");
         require(!_bobSet, "Bob's wealth already set");
         
@@ -133,6 +143,7 @@ contract MillionaireComparisonPod is PodLib64 {
      */
     /// @param callbackFeeWei Native wei forwarded to the inbox as `callbackFeeLocalWei` per `gt64` leg (same value for Alice and Bob).
     function compareWealth(uint256 callbackFeeWei) external payable {
+        require(_alice != address(0) && _bob != address(0), "Players not configured");
         require(_aliceSet && _bobSet, "Both parties must submit their wealth first");
         require(msg.value >= 200 gwei, "need 200 gwei fee for two MPC callbacks");
         uint256 providedFee = msg.value / 2;
@@ -234,6 +245,7 @@ contract MillionaireComparisonPod is PodLib64 {
      * @dev Can only be called by Alice (contract initiator)
      */
     function reset() external {
+        require(_alice != address(0), "Players not configured");
         require(msg.sender == _alice, "Only Alice can reset the contract");
         _aliceSet = false;
         _bobSet = false;

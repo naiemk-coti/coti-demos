@@ -7,7 +7,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const nm = (pkg) => path.join(__dirname, 'node_modules', pkg);
 
 export default defineConfig({
-    envPrefix: ['VITE_', 'SEPOLIA_', 'COTI_'],
+    // ENC_K for decrypting v1: private keys in the browser (local demos only).
+    envPrefix: ['VITE_', 'SEPOLIA_', 'COTI_', 'ENC_'],
     plugins: [react()],
     server: {
         port: 3000,

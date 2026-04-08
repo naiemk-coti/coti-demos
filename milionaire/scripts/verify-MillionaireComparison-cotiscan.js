@@ -1,52 +1,46 @@
 /**
- * Verify MillionaireComparisonPod on Etherscan (Sepolia) using the Standard JSON Input API.
+ * Verify MillionaireComparison on Cotiscan (COTI testnet Blockscout) via Standard JSON Input API.
  *
- * Hardhat's `verify` task often fails with HH3 build-info because `solcLongVersion` is stored as
- * "0.8.26" while Etherscan expects "v0.8.26+commit.<hash>". This script sends the exact compiler
- * string Etherscan lists for 0.8.26.
+ * Hardhat 3 build-info sets `solcLongVersion` to `"0.8.19"` only; Cotiscan expects the full
+ * string from the compiler list (e.g. `v0.8.19+commit.7dd6d404`), so `hardhat verify blockscout`
+ * often returns "Unable to verify". This script sends the correct `compilerversion`.
  *
  * Usage:
- *   HARDHAT_CONTRACTS_SCOPE=pod npm run compile:pod
- *   node scripts/verify-MillionaireComparisonPod-etherscan.js <deployedAddress>
+ *   npm run compile
+ *   node scripts/verify-MillionaireComparison-cotiscan.js <deployedAddress>
  *
- * Requires .env: ETHERSCAN_API_KEY
- * (Constructor has no arguments; inbox / executor / chain id are hardcoded in the contract.)
+ * Optional: VERIFY_BUILD_INFO=artifacts/build-info/<file>.json
  *
- * Optional: VERIFY_BUILD_INFO=artifacts-pod/build-info/<file>.json
+ * Explorer: https://testnet.cotiscan.io/
  */
 import { readFileSync, readdirSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
-import { config as dotenvConfig } from "dotenv";
 import { ethers } from "ethers";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
 
-/** Matches https://etherscan.io/solcversions for 0.8.26 */
-const ETHERSCAN_SOLC_VERSION = "v0.8.26+commit.8a97fa7a";
+/** Matches https://etherscan.io/solcversions (same compiler string Blockscout expects). */
+const COTI_SOLC_VERSION = "v0.8.19+commit.7dd6d404";
 
-/** Sepolia — Etherscan API V2 (unified); V1 host deprecated as of Aug 2025 */
-const ETHERSCAN_V2_API = "https://api.etherscan.io/v2/api";
-const SEPOLIA_CHAIN_ID = "11155111";
+const COTISCAN_API = "https://testnet.cotiscan.io/api";
 
-dotenvConfig({ path: join(ROOT, ".env") });
-
-function findPodBuildInfoPath() {
+function findCotiBuildInfoPath() {
   if (process.env.VERIFY_BUILD_INFO) {
     return join(ROOT, process.env.VERIFY_BUILD_INFO);
   }
-  const dir = join(ROOT, "artifacts-pod", "build-info");
+  const dir = join(ROOT, "artifacts", "build-info");
   const files = readdirSync(dir).filter(
     (f) => f.endsWith(".json") && !f.endsWith(".output.json"),
   );
   for (const f of files) {
     const p = join(dir, f);
     const raw = readFileSync(p, "utf8");
-    if (!raw.includes("project/contracts/pod/MillionaireComparisonPod.sol")) continue;
+    if (!raw.includes("project/contracts/coti/MillionaireComparison.sol")) continue;
     try {
       const j = JSON.parse(raw);
-      if (j.input?.sources?.["project/contracts/pod/MillionaireComparisonPod.sol"]) {
+      if (j.input?.sources?.["project/contracts/coti/MillionaireComparison.sol"]) {
         return p;
       }
     } catch {
@@ -54,18 +48,15 @@ function findPodBuildInfoPath() {
     }
   }
   throw new Error(
-    "Could not find pod build-info JSON. Run: HARDHAT_CONTRACTS_SCOPE=pod npm run compile:pod",
+    "Could not find COTI build-info JSON. Run: npm run compile (default scope, contracts/coti).",
   );
 }
 
 async function pollGuid(guid) {
-  const apiKey = process.env.ETHERSCAN_API_KEY;
-  const url = new URL(ETHERSCAN_V2_API);
-  url.searchParams.set("chainid", SEPOLIA_CHAIN_ID);
+  const url = new URL(COTISCAN_API);
   url.searchParams.set("module", "contract");
   url.searchParams.set("action", "checkverifystatus");
   url.searchParams.set("guid", guid);
-  url.searchParams.set("apikey", apiKey);
   for (let i = 0; i < 40; i++) {
     const res = await fetch(url.toString());
     const json = await res.json();
@@ -77,51 +68,41 @@ async function pollGuid(guid) {
     }
     await new Promise((r) => setTimeout(r, 3000));
   }
-  return { status: "0", result: "Timeout waiting for Etherscan verification status" };
+  return { status: "0", result: "Timeout waiting for Cotiscan verification status" };
 }
 
 async function main() {
   const address = process.argv[2];
   if (!address) {
     console.error(
-      "Usage: node scripts/verify-MillionaireComparisonPod-etherscan.js <deployedAddress>",
+      "Usage: node scripts/verify-MillionaireComparison-cotiscan.js <deployedAddress>",
     );
     process.exit(1);
   }
 
-  const apiKey = process.env.ETHERSCAN_API_KEY;
-  if (!apiKey) {
-    console.error("Set ETHERSCAN_API_KEY in .env");
-    process.exit(1);
-  }
-
-  const buildInfoPath = findPodBuildInfoPath();
+  const buildInfoPath = findCotiBuildInfoPath();
   const buildInfo = JSON.parse(readFileSync(buildInfoPath, "utf8"));
   const sourceCode = JSON.stringify(buildInfo.input);
-
-  const constructorArgs = "";
 
   const body = new URLSearchParams({
     contractaddress: ethers.getAddress(address),
     sourceCode,
     codeformat: "solidity-standard-json-input",
     contractname:
-      "project/contracts/pod/MillionaireComparisonPod.sol:MillionaireComparisonPod",
-    compilerversion: ETHERSCAN_SOLC_VERSION,
+      "project/contracts/coti/MillionaireComparison.sol:MillionaireComparison",
+    compilerversion: COTI_SOLC_VERSION,
     optimizationUsed: "1",
     runs: "200",
-    constructorArguments: constructorArgs,
+    constructorArguments: "",
     licenseType: "3",
   });
 
-  const submitUrl = new URL(ETHERSCAN_V2_API);
-  submitUrl.searchParams.set("chainid", SEPOLIA_CHAIN_ID);
+  const submitUrl = new URL(COTISCAN_API);
   submitUrl.searchParams.set("module", "contract");
   submitUrl.searchParams.set("action", "verifysourcecode");
-  submitUrl.searchParams.set("apikey", apiKey);
 
   console.log("Using build-info:", buildInfoPath.replace(ROOT + "/", ""));
-  console.log("Submitting to Etherscan API V2 (Sepolia)...");
+  console.log("Submitting to Cotiscan (COTI testnet)...");
 
   const res = await fetch(submitUrl.toString(), {
     method: "POST",
@@ -135,8 +116,8 @@ async function main() {
   if (json.status === "1" && json.result && typeof json.result === "string") {
     const status = await pollGuid(json.result);
     console.log("Result:", JSON.stringify(status, null, 2));
-    if (status.status === "1") {
-      console.log("\nDone. View on Sepolia Etherscan.");
+    if (status.status === "1" && String(status.result).toLowerCase().includes("pass")) {
+      console.log("\nDone:", `${submitUrl.origin}/address/${ethers.getAddress(address)}#code`);
     }
   }
 }

@@ -1,5 +1,5 @@
 /**
- * Read Vite client env. Merged app uses envPrefix VITE_, SEPOLIA_, COTI_ in vite.config.js.
+ * Read Vite client env. See envPrefix in vite.config.js (VITE_, SEPOLIA_, COTI_, ENC_).
  */
 export function readEnv(key, fallback) {
     const v = import.meta.env[key];

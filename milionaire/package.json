@@ -14,12 +14,16 @@
     "deploy": "hardhat run scripts/deploy-MillionaireComparison.js --network cotiTestnet",
     "deploy:coti": "hardhat run scripts/deploy-MillionaireComparison.js --network cotiTestnet",
     "deploy:pod": "HARDHAT_CONTRACTS_SCOPE=pod hardhat run scripts/deploy-MillionaireComparisonPod.js --network sepolia",
-    "verify:pod": "node scripts/verify-MillionaireComparisonPod-etherscan.js"
+    "verify:pod": "node scripts/verify-MillionaireComparisonPod-etherscan.js",
+    "verify:coti": "node scripts/verify-MillionaireComparison-cotiscan.js",
+    "encrypt-key": "node scripts/cli.js"
   },
   "dependencies": {
     "@coti-io/coti-contracts": "^1.0.0",
     "@coti-io/coti-ethers": "^1.0.5",
     "@coti/pod-sdk": "github:cotitech-io/coti-pod-sdk",
+    "@noble/ciphers": "^2.1.1",
+    "@noble/hashes": "^2.0.1",
     "@openzeppelin/contracts": "^5.6.1",
     "ethers": "^6.0.0",
     "react": "^18.2.0",

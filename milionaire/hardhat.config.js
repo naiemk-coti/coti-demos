@@ -1,6 +1,7 @@
 import "@nomicfoundation/hardhat-ignition";
 import hardhatEthers from "@nomicfoundation/hardhat-ethers";
 import hardhatVerify from "@nomicfoundation/hardhat-verify";
+import { getPrivateKey } from "./src/lib/KeyUtils.js";
 import { config as dotenvConfig } from "dotenv";
 
 dotenvConfig();
@@ -19,6 +20,19 @@ const cotiRpc =
 /** @type import('hardhat/config').HardhatUserConfig */
 export default {
     plugins: [hardhatEthers, hardhatVerify],
+    /** Cotiscan (Blockscout) for `hardhat verify blockscout` on COTI testnet */
+    chainDescriptors: {
+        7082400: {
+            name: "COTI Testnet",
+            blockExplorers: {
+                blockscout: {
+                    name: "Cotiscan",
+                    url: "https://testnet.cotiscan.io",
+                    apiUrl: "https://testnet.cotiscan.io/api",
+                },
+            },
+        },
+    },
     solidity:
         scope === "pod"
             ? {
@@ -48,8 +62,8 @@ export default {
             chainId: 7082400,
             accounts: [
                 process.env.DEPLOYER_PRIVATE_KEY,
-                process.env.VITE_ALICE_PK_FOR_COTIA,
-                process.env.VITE_BOB_PK_FOR_COTI,
+                getPrivateKey('VITE_ALICE_PK'),
+                getPrivateKey('VITE_BOB_PK')
             ].filter(Boolean),
             timeout: 120000,
             gas: 3000000,
@@ -60,8 +74,9 @@ export default {
             chainType: "l1",
             url: process.env.SEPOLIA_RPC_URL,
             accounts: [
-                process.env.SEPOLIA_PRIVATE_KEY,
                 process.env.DEPLOYER_PRIVATE_KEY,
+                getPrivateKey('VITE_ALICE_PK'),
+                getPrivateKey('VITE_BOB_PK')
             ].filter(Boolean),
         },
     },
