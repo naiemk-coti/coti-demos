@@ -4,6 +4,7 @@ pragma solidity ^0.8.19;
 
 import { PodLibBase } from "@coti/pod-sdk/contracts/mpc/PodLibBase.sol";
 import { PodLib64 } from "@coti/pod-sdk/contracts/mpc/PodLib64.sol";
+import { PodUserSepolia } from "@coti/pod-sdk/contracts/mpc/PodUserSepolia.sol";
 import { ctBool, ctUint64, itUint64 } from "@coti-io/coti-contracts/contracts/utils/mpc/MpcCore.sol";
 
 /**
@@ -11,7 +12,7 @@ import { ctBool, ctUint64, itUint64 } from "@coti-io/coti-contracts/contracts/ut
  * @notice Implements Yao's Millionaires' Problem using COTI PoD MPC (Privacy on Demand).
  * @dev Two parties (Alice and Bob) can compare their wealth without revealing the actual amounts.
  */
-contract MillionaireComparisonPod is PodLib64 {
+contract MillionaireComparisonPod is PodLib64, PodUserSepolia {
 
     bytes32 public compareRequestIdAlice;
     bytes32 public compareRequestIdBob;
@@ -33,11 +34,6 @@ contract MillionaireComparisonPod is PodLib64 {
     // Store addresses for consistent encryption (set via configurePlayers)
     address private _alice;
     address private _bob;
-
-    /// @dev Hardcoded PoD routing (COTI testnet linkage from Sepolia).
-    address private constant _INBOX = 0xFa158f9e49C8bb77f971c3630EbCD23a8a88D14E;
-    address private constant _MPC_EXECUTOR = 0xC76aaE4F3810fBBd5d96b92DEFeBE0034405Ad9c;
-    uint256 private constant _COTI_CHAIN_ID = 7082400;
 
     // Events for tracking operations
     /// @notice Emitted when a party submits their encrypted wealth
@@ -67,8 +63,6 @@ contract MillionaireComparisonPod is PodLib64 {
     event PlayersConfigured(address indexed alice, address indexed bob);
 
     constructor() PodLibBase(msg.sender) {
-        setInbox(_INBOX);
-        configureCoti(_MPC_EXECUTOR, _COTI_CHAIN_ID);
     }
 
     /**
