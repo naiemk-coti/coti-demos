@@ -1,8 +1,0 @@
-{
-  "get-sync-state": {
-    "data": {
-      "syncPercentage": 100
-    }
-  },
-  "_comment": "Add more keys for other chain API endpoints; the mock server serves them at GET /<key>. Replace values with the output you want the app to receive."
-}
