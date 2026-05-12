@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import styled, { keyframes } from 'styled-components'
 import IntroModal from '../components/IntroModal.jsx'
+import { PodRequestTracker } from '../components/PodRequestTracker.jsx'
 
 const EXPLORER = {
     coti: {
@@ -10,6 +11,12 @@ const EXPLORER = {
     sepolia: {
         tx: (hash) => `https://sepolia.etherscan.io/tx/${hash}`,
         address: (addr) => `https://sepolia.etherscan.io/address/${addr}`,
+        /** PoD request deep link; set `VITE_POD_REQUEST_EXPLORER_URL` with `{requestId}` placeholder. */
+        podRequest: (requestId) => {
+            const t = import.meta.env.VITE_POD_REQUEST_EXPLORER_URL
+            if (!t || !requestId) return null
+            return t.replaceAll('{requestId}', requestId)
+        },
     },
 }
 import {
@@ -203,32 +210,6 @@ const MonospaceText = styled.div`
   color: ${props => props.theme.colors.text.default} !important;
   line-height: 1.3;
   opacity: 0.85;
-`;
-
-const spin = keyframes`
-  to { transform: rotate(360deg); }
-`;
-
-const WaitingSpinner = styled.div`
-  width: 40px;
-  height: 40px;
-  border: 3px solid ${(p) => p.theme.colors?.primary?.default10 || 'rgba(30, 41, 246, 0.2)'};
-  border-top-color: ${(p) => p.theme.colors?.primary?.default || '#1E29F6'};
-  border-radius: 50%;
-  animation: ${spin} 0.8s linear infinite;
-  margin: 0 auto 1rem;
-`;
-
-const WaitingOverlay = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-  text-align: center;
-  color: ${(p) => p.theme.colors.text.default} !important;
-  font-size: 0.95rem;
-  line-height: 1.5;
 `;
 
 const ContractDetail = styled.p`
@@ -436,6 +417,7 @@ export function MillionaireHomePage({ useContractHook, network }) {
         getEncryptedBobWealth,
         resetContract,
         contractAddress,
+        sepoliaRpcUrl,
         aliceWallet,
         bobWallet
     } = useContractHook()
@@ -461,7 +443,8 @@ export function MillionaireHomePage({ useContractHook, network }) {
     // Shared state
     const [connectionStatus, setConnectionStatus] = useState('')
     const [globalLoading, setGlobalLoading] = useState(false)
-    const [waitingForResults, setWaitingForResults] = useState(false)
+    const [podTracker, setPodTracker] = useState(null)
+    const podWaitRef = useRef(null)
     const [showInfoModal, setShowInfoModal] = useState(false)
     const [showComparisonModal, setShowComparisonModal] = useState(false)
     const [comparisonResult, setComparisonResult] = useState(null)
@@ -472,6 +455,13 @@ export function MillionaireHomePage({ useContractHook, network }) {
         // checkContractConnection uses hook methods; deps capture wallet / contract readiness.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [aliceWallet, bobWallet, contractAddress, network])
+
+    const handlePodTrackerSettled = useCallback(() => {
+        setPodTracker(null)
+        const r = podWaitRef.current
+        podWaitRef.current = null
+        r?.()
+    }, [])
 
     const checkContractConnection = async () => {
         setConnectionStatus('🔄 Checking contract connection...')
@@ -678,15 +668,24 @@ export function MillionaireHomePage({ useContractHook, network }) {
         try {
             const comparisonTx = await performComparison(aliceWallet, 'Alice')
             if (pollsMpc) {
-                setWaitingForResults(true)
                 setConnectionStatus('')
             }
+            if (
+                pollsMpc &&
+                comparisonTx.podTrackRequestId &&
+                comparisonTx.podInboxAddress &&
+                sepoliaRpcUrl
+            ) {
+                await new Promise((resolve) => {
+                    podWaitRef.current = resolve
+                    setPodTracker({
+                        inboxAddress: comparisonTx.podInboxAddress,
+                        requestIdBob: comparisonTx.podTrackRequestId,
+                    })
+                })
+            }
 
-            const result = pollsMpc
-                ? await getFullComparisonResult(() => {
-                      setConnectionStatus('Still checking every 15s...')
-                  })
-                : await getFullComparisonResult()
+            const result = await getFullComparisonResult()
 
             const txHash = comparisonTx.transaction.hash
             const explorerLink = ex.tx(txHash)
@@ -706,9 +705,6 @@ export function MillionaireHomePage({ useContractHook, network }) {
             setConnectionStatus('❌ Error performing comparison: ' + (error.message || error.toString()))
             setTimeout(() => setConnectionStatus(''), 5000)
         } finally {
-            if (pollsMpc) {
-                setWaitingForResults(false)
-            }
             setGlobalLoading(false)
         }
     }
@@ -721,15 +717,24 @@ export function MillionaireHomePage({ useContractHook, network }) {
         try {
             const comparisonTx = await performComparison(bobWallet, 'Bob')
             if (pollsMpc) {
-                setWaitingForResults(true)
                 setBobStatus('')
             }
+            if (
+                pollsMpc &&
+                comparisonTx.podTrackRequestId &&
+                comparisonTx.podInboxAddress &&
+                sepoliaRpcUrl
+            ) {
+                await new Promise((resolve) => {
+                    podWaitRef.current = resolve
+                    setPodTracker({
+                        inboxAddress: comparisonTx.podInboxAddress,
+                        requestIdBob: comparisonTx.podTrackRequestId,
+                    })
+                })
+            }
 
-            const result = pollsMpc
-                ? await getFullComparisonResult(() => {
-                      setBobStatus('Still checking every 15s...')
-                  })
-                : await getFullComparisonResult()
+            const result = await getFullComparisonResult()
 
             const txHash = comparisonTx.transaction.hash
             const explorerLink = ex.tx(txHash)
@@ -758,9 +763,6 @@ export function MillionaireHomePage({ useContractHook, network }) {
             setBobStatus('❌ Error: ' + (error.message || error.toString()))
             setBobStatusVariant('error')
         } finally {
-            if (pollsMpc) {
-                setWaitingForResults(false)
-            }
             setBobLoading(false)
         }
     }
@@ -926,25 +928,15 @@ export function MillionaireHomePage({ useContractHook, network }) {
                 </ModalOverlay>
             )}
 
-            {/* Waiting for comparison results (Sepolia / PoD — async MPC inbox) */}
-            {pollsMpc && waitingForResults && (
-                <CardsContainer style={{ marginTop: '0', marginBottom: '1rem', maxWidth: '900px' }}>
-                    <Card $maxWidth="100%" style={{ padding: '2rem', textAlign: 'center' }}>
-                        <WaitingOverlay>
-                            <WaitingSpinner />
-                            <strong>Waiting for comparison results</strong>
-                            <p style={{ margin: '0.5rem 0 0', opacity: 0.9 }}>
-                                Polling <code>aliceResultReady</code> and <code>bobResultReady</code>. This may take a couple of minutes.
-                            </p>
-                            {connectionStatus && (
-                                <p style={{ margin: '0.5rem 0 0', fontSize: '0.85rem', opacity: 0.8 }}>{connectionStatus}</p>
-                            )}
-                            {bobStatus && typeof bobStatus === 'string' && (
-                                <p style={{ margin: '0.5rem 0 0', fontSize: '0.85rem', opacity: 0.8 }}>{bobStatus}</p>
-                            )}
-                        </WaitingOverlay>
-                    </Card>
-                </CardsContainer>
+            {podTracker && sepoliaRpcUrl && (
+                <PodRequestTracker
+                    sepoliaInboxAddress={podTracker.inboxAddress}
+                    sepoliaRpcUrl={sepoliaRpcUrl}
+                    requestIdBob={podTracker.requestIdBob}
+                    inboxExplorerUrl={(addr) => ex.address(addr)}
+                    podRequestExplorerUrl={pollsMpc ? ex.podRequest : undefined}
+                    onSettled={handlePodTrackerSettled}
+                />
             )}
 
             {/* Header Card - Centered */}

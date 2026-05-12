@@ -5,6 +5,7 @@ import { CotiPodCrypto, DataType } from '@coti/pod-sdk';
 import { readEnv } from '../lib/envRead.js';
 import { tryGetPrivateKey } from '../lib/KeyUtils.js';
 import { estimateMillionairePodCompareWealthFee } from '../lib/podFeeUtils.ts';
+import { parseComparisonRequestedFromReceipt } from '../lib/podInboxRequest.js';
 
 // Retry utility for handling transient RPC errors
 async function retryWithBackoff(
@@ -315,7 +316,14 @@ export function useMillionaireContractPod() {
             console.log('Comparison transaction sent:', transaction.hash);
             const receipt = await transaction.wait();
             console.log('Comparison completed in block:', receipt.blockNumber);
-            return { transaction, receipt };
+            const contractAddr = await contract.getAddress();
+            let podTrackRequestId;
+            try {
+                podTrackRequestId = parseComparisonRequestedFromReceipt(receipt, contractAddr).requestIdBob;
+            } catch (e) {
+                console.warn('Could not parse ComparisonRequested for PoD tracker:', e);
+            }
+            return { transaction, receipt, podInboxAddress: podInbox, podTrackRequestId };
         }, 3, 1000);
 
         return tx;
@@ -334,7 +342,7 @@ export function useMillionaireContractPod() {
         // Wait for MPC result to be ready (can take a few minutes)
         const ready = await pollUntilReady(
             () => contract.aliceResultReady(),
-            { pollIntervalMs: 15000, maxWaitMs: 600000, onPoll: onWaiting }
+            { pollIntervalMs: 5000, maxWaitMs: 600000, onPoll: onWaiting }
         );
         if (!ready) {
             throw new Error('Timeout waiting for Alice result from MPC. Try again later.');
@@ -370,7 +378,7 @@ export function useMillionaireContractPod() {
         // Wait for MPC result to be ready (can take a few minutes)
         const ready = await pollUntilReady(
             () => contract.bobResultReady(),
-            { pollIntervalMs: 15000, maxWaitMs: 600000, onPoll: onWaiting }
+            { pollIntervalMs: 5000, maxWaitMs: 600000, onPoll: onWaiting }
         );
         if (!ready) {
             throw new Error('Timeout waiting for Bob result from MPC. Try again later.');
@@ -556,6 +564,7 @@ export function useMillionaireContractPod() {
         getEncryptedBobWealth,
         resetContract,
         contractAddress,
+        sepoliaRpcUrl: rpcUrl,
         aliceWallet,
         bobWallet
     };

@@ -517,6 +517,8 @@ export function useMillionaireContractCoti() {
         getEncryptedBobWealth,
         resetContract,
         contractAddress,
+        readProvider: null,
+        sepoliaRpcUrl: null,
         aliceWallet,
         bobWallet
     };
