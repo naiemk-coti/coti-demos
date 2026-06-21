@@ -1,12 +1,12 @@
 import { ethers } from 'ethers';
 import { readEnv } from '../envRead.js';
-import { parseUserAmountToWei } from '../wealthWeiParse.js';
 
 const ENCRYPTION_URL = 'https://fullnode.testnet.coti.io/pod-encryption';
+const MAX_UINT64 = (1n << 64n) - 1n;
 
 const WEALTH_ABI = new ethers.Interface([
-    'function setAliceWealth(tuple(tuple(uint256 ciphertextHigh, uint256 ciphertextLow) ciphertext, bytes signature) wealth) external',
-    'function setBobWealth(tuple(tuple(uint256 ciphertextHigh, uint256 ciphertextLow) ciphertext, bytes signature) wealth) external',
+    'function setAliceWealth(tuple(uint256 ciphertext, bytes signature) wealth) external',
+    'function setBobWealth(tuple(uint256 ciphertext, bytes signature) wealth) external',
 ]);
 export const SET_ALICE_WEALTH_SELECTOR = WEALTH_ABI.getFunction('setAliceWealth').selector;
 export const SET_BOB_WEALTH_SELECTOR = WEALTH_ABI.getFunction('setBobWealth').selector;
@@ -16,16 +16,24 @@ function hex(v) {
     return t.startsWith('0x') ? t : `0x${t}`;
 }
 
-/** PoD service `buildEncryptedInputs` → pod-mpc-lib flat `itUint256`. */
-export function mapPodUint256Response({ ciphertext, signature }) {
-    if (ciphertext?.ciphertextHigh == null || ciphertext?.ciphertextLow == null || typeof signature !== 'string') {
-        throw new Error('Invalid uint256 encrypt response (expected ciphertextHigh, ciphertextLow, signature)');
+export function parseUint64Wealth(raw) {
+    const s = String(raw ?? '')
+        .trim()
+        .replace(/,/g, '');
+    if (!s) throw new Error('Amount is required');
+    if (!/^\d+$/.test(s)) throw new Error('PoD wealth must be a whole number');
+    const value = BigInt(s);
+    if (value > MAX_UINT64) throw new Error('Amount exceeds 64-bit range');
+    return value;
+}
+
+/** PoD service `buildEncryptedInputs` → pod-mpc-lib `itUint64`. */
+export function mapPodUint64Response({ ciphertext, signature }) {
+    if (ciphertext == null || typeof signature !== 'string') {
+        throw new Error('Invalid uint64 encrypt response (expected ciphertext and signature)');
     }
     return {
-        ciphertext: {
-            ciphertextHigh: BigInt(hex(ciphertext.ciphertextHigh)),
-            ciphertextLow: BigInt(hex(ciphertext.ciphertextLow)),
-        },
+        ciphertext: BigInt(hex(ciphertext)),
         signature: hex(signature),
     };
 }
@@ -35,7 +43,7 @@ async function fetchEncryptedInputs(value, signingContext = {}) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            dataType: 'uint256',
+            dataType: 'uint64',
             value: String(value),
             ...signingContext,
         }),
@@ -58,12 +66,12 @@ async function fetchEncryptedInputs(value, signingContext = {}) {
  * @param {string} userAddress
  */
 export async function encryptDecimalWealth(decimalAmount, role, contractAddress, userAddress) {
-    const wei = parseUserAmountToWei(decimalAmount, Number(readEnv('VITE_WEALTH_DECIMALS', '18')));
+    const wei = parseUint64Wealth(decimalAmount);
     const enc = await fetchEncryptedInputs(wei.toString(), {
         contractAddress,
         functionSelector: role === 'alice' ? SET_ALICE_WEALTH_SELECTOR : SET_BOB_WEALTH_SELECTOR,
         userAddress,
         aesKey: readEnv(role === 'alice' ? 'VITE_ALICE_AES_KEY' : 'VITE_BOB_AES_KEY'),
     });
-    return mapPodUint256Response(enc);
+    return mapPodUint64Response(enc);
 }

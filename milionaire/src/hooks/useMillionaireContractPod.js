@@ -1,11 +1,10 @@
 import { useState, useLayoutEffect } from 'react';
 import { ethers } from 'ethers';
 import { readEnv } from '../lib/envRead.js';
-import { parseUserAmountToWei } from '../lib/wealthWeiParse.js';
 import { MILLIONAIRE_COMPARISON_ABI } from '../lib/pod/abi.js';
 import { retryWithBackoff, pollUntilReady } from '../lib/pod/async.js';
-import { encryptDecimalWealth } from '../lib/pod/encryption.js';
-import { formatCtUint256 } from '../lib/pod/format.js';
+import { encryptDecimalWealth, parseUint64Wealth } from '../lib/pod/encryption.js';
+import { formatCiphertext } from '../lib/pod/format.js';
 import { parseComparisonRequestedFromReceipt } from '../lib/pod/inbox.js';
 import { estimateCompareWealthFee } from '../lib/pod/fees.ts';
 import { createPlayerWallet, requirePlayerWallet } from '../lib/pod/wallets.js';
@@ -57,18 +56,18 @@ export function makeUseMillionaireContractPod(networkId) {
                 throw new Error(`${cfg.aes} required to submit wealth and decrypt results`);
             }
 
-            const wei = parseUserAmountToWei(wealth, Number(readEnv('VITE_WEALTH_DECIMALS', '18')));
+            const wealthValue = parseUint64Wealth(wealth);
             const encrypted = await encryptDecimalWealth(wealth, role, contractAddress, wallet.address);
             const contract = contractFor(wallet);
 
             return retryWithBackoff(async () => {
-                const tx = await contract[cfg.setFn](encrypted, { gasLimit: 500_000 });
+                const tx = await contract[cfg.setFn](encrypted, { gasLimit: 250_000 });
                 const receipt = await tx.wait();
                 return {
                     receipt,
-                    wealthWei: wei.toString(),
+                    wealthValue: wealthValue.toString(),
                     wealthInput: String(wealth).trim(),
-                    encryptedCiphertext: formatCtUint256(encrypted.ciphertext),
+                    encryptedCiphertext: formatCiphertext(encrypted.ciphertext),
                 };
             });
         };
@@ -86,7 +85,7 @@ export function makeUseMillionaireContractPod(networkId) {
                 const podInbox = await contract.inbox();
                 const fee = await estimateCompareWealthFee(provider, podInbox);
                 const tx = await contract.compareWealth(fee.callbackFeeWei, {
-                    gasLimit: 5_000_000,
+                    gasLimit: 2_500_000,
                     value: fee.totalFeeWei,
                 });
                 const receipt = await tx.wait();
@@ -197,7 +196,7 @@ export function makeUseMillionaireContractPod(networkId) {
             const getter = role === 'alice' ? 'getAliceWealth' : 'getBobWealth';
             const isSet = role === 'alice' ? 'isAliceWealthSet' : 'isBobWealthSet';
             if (!(await contract[isSet]())) return null;
-            return formatCtUint256(await contract[getter]());
+            return formatCiphertext(await contract[getter]());
         };
 
         const resetContract = async () => {

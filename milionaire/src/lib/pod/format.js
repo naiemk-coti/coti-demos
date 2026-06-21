@@ -1,5 +1,5 @@
-/** Pretty-print on-chain `ctUint256` for the UI. */
-export function formatCtUint256(ct) {
+/** Pretty-print on-chain ciphertext values for the UI. */
+export function formatCiphertext(ct) {
     if (ct == null) return '';
     const replacer = (_, v) => (typeof v === 'bigint' ? v.toString() : v);
     try {
@@ -8,3 +8,6 @@ export function formatCtUint256(ct) {
         return String(ct);
     }
 }
+
+/** @deprecated use formatCiphertext */
+export const formatCtUint256 = formatCiphertext;

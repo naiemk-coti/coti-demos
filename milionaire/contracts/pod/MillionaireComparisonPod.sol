@@ -4,11 +4,11 @@ pragma solidity ^0.8.19;
 
 import { PodLibBase } from "pod-mpc-lib/mpc/PodLibBase.sol";
 import { PodLib } from "pod-mpc-lib/mpc/PodLib.sol";
-import { ctBool, ctUint256, itUint256 } from "pod-mpc-lib/utils/mpc/MpcCore.sol";
+import { ctBool, ctUint64, itUint64 } from "pod-mpc-lib/utils/mpc/MpcCore.sol";
 
 /**
  * @title MillionaireComparisonPod
- * @notice Yao's Millionaires' Problem using COTI PoD MPC — **256-bit** encrypted wealth (wei-scale integers).
+ * @notice Yao's Millionaires' Problem using COTI PoD MPC — **64-bit** encrypted wealth.
  * @dev Network-agnostic: the owner sets the inbox and COTI routing post-deploy via {PodUser-configure}.
  */
 contract MillionaireComparisonPod is PodLib {
@@ -16,8 +16,8 @@ contract MillionaireComparisonPod is PodLib {
     bytes32 public compareRequestIdAlice;
     bytes32 public compareRequestIdBob;
 
-    itUint256 private _aliceWealth;
-    itUint256 private _bobWealth;
+    itUint64 private _aliceWealth;
+    itUint64 private _bobWealth;
 
     bool private _aliceSet;
     bool private _bobSet;
@@ -70,7 +70,7 @@ contract MillionaireComparisonPod is PodLib {
         return _aliceSet && _bobSet;
     }
 
-    function setAliceWealth(itUint256 calldata wealth) external {
+    function setAliceWealth(itUint64 calldata wealth) external {
         require(_alice != address(0), "Players not configured");
         require(msg.sender == _alice, "Only Alice can set her wealth");
         require(!_aliceSet, "Alice's wealth already set");
@@ -81,7 +81,7 @@ contract MillionaireComparisonPod is PodLib {
         emit WealthSubmitted(msg.sender, true);
     }
 
-    function setBobWealth(itUint256 calldata wealth) external {
+    function setBobWealth(itUint64 calldata wealth) external {
         require(_bob != address(0), "Players not configured");
         require(msg.sender == _bob, "Only Bob can set his wealth");
         require(!_bobSet, "Bob's wealth already set");
@@ -92,7 +92,7 @@ contract MillionaireComparisonPod is PodLib {
         emit WealthSubmitted(msg.sender, false);
     }
 
-    /// @param callbackFeeWei Native wei forwarded to the inbox as `callbackFeeLocalWei` per `gt256` leg (same value for Alice and Bob).
+    /// @param callbackFeeWei Native wei forwarded to the inbox as `callbackFeeLocalWei` per `gt64` leg (same value for Alice and Bob).
     function compareWealth(uint256 callbackFeeWei) external payable {
         require(_alice != address(0) && _bob != address(0), "Players not configured");
         require(_aliceSet && _bobSet, "Both parties must submit their wealth first");
@@ -101,10 +101,10 @@ contract MillionaireComparisonPod is PodLib {
         require(callbackFeeWei >= MIN_CALLBACK_FEE_WEI, "callback fee too low");
         require(callbackFeeWei < providedFee, "callback fee exceeds leg budget");
 
-        itUint256 memory aliceWealth = _aliceWealth;
-        itUint256 memory bobWealth = _bobWealth;
+        itUint64 memory aliceWealth = _aliceWealth;
+        itUint64 memory bobWealth = _bobWealth;
 
-        compareRequestIdAlice = gt256(
+        compareRequestIdAlice = gt64(
             aliceWealth,
             bobWealth,
             _alice,
@@ -112,7 +112,7 @@ contract MillionaireComparisonPod is PodLib {
             this.onDefaultMpcError.selector,
             providedFee,
             callbackFeeWei);
-        compareRequestIdBob = gt256(
+        compareRequestIdBob = gt64(
             aliceWealth,
             bobWealth,
             _bob,
@@ -156,12 +156,12 @@ contract MillionaireComparisonPod is PodLib {
         return _bob;
     }
 
-    function getAliceWealth() public view returns (ctUint256 memory) {
+    function getAliceWealth() public view returns (ctUint64) {
         require(_aliceSet, "Alice's wealth not set yet");
         return _aliceWealth.ciphertext;
     }
 
-    function getBobWealth() public view returns (ctUint256 memory) {
+    function getBobWealth() public view returns (ctUint64) {
         require(_bobSet, "Bob's wealth not set yet");
         return _bobWealth.ciphertext;
     }

@@ -28,11 +28,8 @@ import {
     ButtonGroup
 } from '../components/styles.js'
 
-/** Used on PoD pages (`/sepolia`, `/avalanche`) — decimal wealth UI. */
-const WEALTH_DECIMALS = (() => {
-    const n = Number(import.meta.env.VITE_WEALTH_DECIMALS)
-    return Number.isFinite(n) && n >= 0 && n <= 78 ? n : 18
-})()
+const UINT64_BITS = 64n
+const MAX_UINT64_WEALTH = ((1n << UINT64_BITS) - 1n).toString()
 
 const Title = styled.h1`
   color: ${props => props.theme.colors.text.default} !important;
@@ -419,7 +416,7 @@ const CloseButton = styled.button`
 export function MillionaireHomePage({ useContractHook, network }) {
     const ex = EXPLORER[network]
     const pollsMpc = isPodDemoNetwork(network)
-    const podDecimalWealthUi = pollsMpc
+    const podUint64WealthUi = pollsMpc
 
     const {
         submitAliceWealth,
@@ -903,10 +900,10 @@ export function MillionaireHomePage({ useContractHook, network }) {
                             <List>
                                 <ListItem>
                                     <strong>Step 1:</strong>{' '}
-                                    {podDecimalWealthUi ? (
+                                    {podUint64WealthUi ? (
                                         <>
-                                            Alice enters a decimal amount; the app converts it to wei ({WEALTH_DECIMALS} decimal
-                                            places), encrypts the wei with the MPC service, and submits the ciphertext to the contract
+                                            Alice enters a whole-number wealth value, the app encrypts it with the MPC service,
+                                            and submits the 64-bit ciphertext to the contract
                                         </>
                                     ) : (
                                         <>Alice encrypts her wealth using her private key and submits it to the smart contract</>
@@ -914,8 +911,8 @@ export function MillionaireHomePage({ useContractHook, network }) {
                                 </ListItem>
                                 <ListItem>
                                     <strong>Step 2:</strong>{' '}
-                                    {podDecimalWealthUi ? (
-                                        <>Bob does the same with his decimal amount</>
+                                    {podUint64WealthUi ? (
+                                        <>Bob does the same with his whole-number wealth value</>
                                     ) : (
                                         <>Bob encrypts his wealth using his private key and submits it to the smart contract</>
                                     )}
@@ -1044,13 +1041,15 @@ export function MillionaireHomePage({ useContractHook, network }) {
                             </PlayerHeader>
 
                             <FormGroup>
-                                {podDecimalWealthUi ? (
+                                {podUint64WealthUi ? (
                                     <>
                                         <PlayerFormInput
                                             type="text"
-                                            inputMode="decimal"
+                                            inputMode="numeric"
                                             autoComplete="off"
-                                            placeholder="e.g. 12.5"
+                                            pattern="[0-9]*"
+                                            placeholder="e.g. 125"
+                                            title={`Whole number from 0 to ${MAX_UINT64_WEALTH}`}
                                             value={bobSubmitted ? "••••••••" : bobWealth}
                                             onChange={(e) => setBobWealth(e.target.value)}
                                             disabled={bobSubmitted}
@@ -1105,13 +1104,15 @@ export function MillionaireHomePage({ useContractHook, network }) {
                             </PlayerHeader>
 
                             <FormGroup>
-                                {podDecimalWealthUi ? (
+                                {podUint64WealthUi ? (
                                     <>
                                         <PlayerFormInput
                                             type="text"
-                                            inputMode="decimal"
+                                            inputMode="numeric"
                                             autoComplete="off"
-                                            placeholder="e.g. 12.5"
+                                            pattern="[0-9]*"
+                                            placeholder="e.g. 125"
+                                            title={`Whole number from 0 to ${MAX_UINT64_WEALTH}`}
                                             value={aliceSubmitted ? "••••••••" : aliceWealth}
                                             onChange={(e) => setAliceWealth(e.target.value)}
                                             disabled={aliceSubmitted}
