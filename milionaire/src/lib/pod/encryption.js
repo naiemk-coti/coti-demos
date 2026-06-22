@@ -60,14 +60,13 @@ async function fetchEncryptedInputs(value, signingContext = {}) {
 }
 
 /**
- * @param {string} decimalAmount
+ * @param {bigint} wealthValue validated 64-bit wealth (see {@link parseUint64Wealth})
  * @param {'alice'|'bob'} role
  * @param {string} contractAddress
  * @param {string} userAddress
  */
-export async function encryptDecimalWealth(decimalAmount, role, contractAddress, userAddress) {
-    const wei = parseUint64Wealth(decimalAmount);
-    const enc = await fetchEncryptedInputs(wei.toString(), {
+export async function encryptUint64Wealth(wealthValue, role, contractAddress, userAddress) {
+    const enc = await fetchEncryptedInputs(wealthValue.toString(), {
         contractAddress,
         functionSelector: role === 'alice' ? SET_ALICE_WEALTH_SELECTOR : SET_BOB_WEALTH_SELECTOR,
         userAddress,

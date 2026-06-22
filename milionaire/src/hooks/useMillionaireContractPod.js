@@ -3,7 +3,7 @@ import { ethers } from 'ethers';
 import { readEnv } from '../lib/envRead.js';
 import { MILLIONAIRE_COMPARISON_ABI } from '../lib/pod/abi.js';
 import { retryWithBackoff, pollUntilReady } from '../lib/pod/async.js';
-import { encryptDecimalWealth, parseUint64Wealth } from '../lib/pod/encryption.js';
+import { encryptUint64Wealth, parseUint64Wealth } from '../lib/pod/encryption.js';
 import { formatCiphertext } from '../lib/pod/format.js';
 import { parseComparisonRequestedFromReceipt } from '../lib/pod/inbox.js';
 import { estimateCompareWealthFee } from '../lib/pod/fees.ts';
@@ -57,7 +57,7 @@ export function makeUseMillionaireContractPod(networkId) {
             }
 
             const wealthValue = parseUint64Wealth(wealth);
-            const encrypted = await encryptDecimalWealth(wealth, role, contractAddress, wallet.address);
+            const encrypted = await encryptUint64Wealth(wealthValue, role, contractAddress, wallet.address);
             const contract = contractFor(wallet);
 
             return retryWithBackoff(async () => {

@@ -6,6 +6,7 @@ const INBOX_ABI = [
 
 const DEFAULT_GAS_PRICE_WEI = 2_000_000_000n;
 const CONTRACT_MIN_TOTAL_FEE_WEI = 200_000_000_000n;
+const CONTRACT_MIN_CALLBACK_FEE_WEI = CONTRACT_MIN_TOTAL_FEE_WEI / 2n;
 const REMOTE_METHOD_CALL_SIZE_BYTES = 2048n;
 const CALLBACK_METHOD_CALL_SIZE_BYTES = 128n;
 const REMOTE_METHOD_EXECUTION_GAS = 300_000n;
@@ -39,15 +40,16 @@ export async function estimateCompareWealthFee(
             gasPriceWei
         );
 
-    const callbackBudgetWei = callerGasLocalWei * CALLBACK_GAS_BUFFER;
+    const callbackBudgetWei = max(callerGasLocalWei * CALLBACK_GAS_BUFFER, CONTRACT_MIN_CALLBACK_FEE_WEI);
+    const remoteReserveWei = max(targetGasRemoteInLocalWei * REMOTE_GAS_BUFFER, CONTRACT_MIN_CALLBACK_FEE_WEI);
     const totalFeeWei = max(
-        targetGasRemoteInLocalWei * REMOTE_GAS_BUFFER + callbackBudgetWei,
+        remoteReserveWei + callbackBudgetWei,
         CONTRACT_MIN_TOTAL_FEE_WEI
     );
-    const maxCallbackFeeWei = totalFeeWei - 1n;
+    // Keep the remote MPC leg funded; mirrors the contract's `callbackFeeWei + MIN_CALLBACK_FEE_WEI <= msg.value` guard.
+    const maxCallbackFeeWei = totalFeeWei - remoteReserveWei;
     let callbackFeeWei = callbackBudgetWei;
     if (callbackFeeWei > maxCallbackFeeWei) callbackFeeWei = maxCallbackFeeWei;
-    if (callbackFeeWei < 1n) callbackFeeWei = 1n;
 
     return { gasPriceWei, totalFeeWei, callbackFeeWei };
 }

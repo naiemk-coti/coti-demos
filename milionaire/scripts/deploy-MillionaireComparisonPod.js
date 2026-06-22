@@ -99,6 +99,11 @@ async function main() {
     if (target.inbox && target.inbox !== ZERO_ADDRESS) {
         const mpcExecutorAddress =
             process.env.COTI_TESTNET_MPC_EXECUTOR_ADDRESS || COTI_TESTNET_MPC_EXECUTOR_ADDRESS;
+        if (!ethers.isAddress(mpcExecutorAddress)) {
+            console.error('Invalid MPC executor address:', mpcExecutorAddress);
+            console.error('Fix COTI_TESTNET_MPC_EXECUTOR_ADDRESS (env) or the default in src/lib/pod/defaults.js.');
+            process.exit(1);
+        }
         console.log('Configuring inbox + COTI routing…');
         console.log('MPC executor:', mpcExecutorAddress);
         const cfgTx = await contract.configure(

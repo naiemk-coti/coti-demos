@@ -19,8 +19,7 @@ interface IMillionaireComparisonCoti {
 contract MillionaireComparisonPod is PodLibBase {
     using MpcAbiCodec for MpcAbiCodec.MpcMethodCallContext;
 
-    bytes32 public compareRequestIdAlice;
-    bytes32 public compareRequestIdBob;
+    bytes32 public compareRequestId;
 
     itUint64 private _aliceWealth;
     itUint64 private _bobWealth;
@@ -104,7 +103,9 @@ contract MillionaireComparisonPod is PodLibBase {
         require(_aliceSet && _bobSet, "Both parties must submit their wealth first");
         require(msg.value >= 200 gwei, "need 200 gwei fee for MPC callback");
         require(callbackFeeWei >= MIN_CALLBACK_FEE_WEI, "callback fee too low");
-        require(callbackFeeWei < msg.value, "callback fee exceeds budget");
+        // Reserve at least MIN_CALLBACK_FEE_WEI of the budget for the remote MPC leg
+        // so a large callback fee can't starve it.
+        require(callbackFeeWei + MIN_CALLBACK_FEE_WEI <= msg.value, "remote leg underfunded");
 
         itUint64 memory aliceWealth = _aliceWealth;
         itUint64 memory bobWealth = _bobWealth;
@@ -123,23 +124,22 @@ contract MillionaireComparisonPod is PodLibBase {
             this.onDefaultMpcError.selector,
             msg.value,
             callbackFeeWei);
-        compareRequestIdAlice = requestId;
-        compareRequestIdBob = requestId;
+        compareRequestId = requestId;
 
-        emit ComparisonRequested(msg.sender, compareRequestIdAlice, compareRequestIdBob);
+        emit ComparisonRequested(msg.sender, requestId, requestId);
     }
 
     function revealCallback(bytes memory data) external onlyInbox {
         bytes32 requestId = inbox.inboxSourceRequestId();
-        if (requestId == compareRequestIdAlice) {
-            (ctBool aliceResult, ctBool bobResult) = abi.decode(data, (ctBool, ctBool));
-            _aliceResult = aliceResult;
-            _bobResult = bobResult;
-            aliceResultReady = true;
-            bobResultReady = true;
-            emit ResultReady(_alice, requestId);
-            emit ResultReady(_bob, requestId);
-        }
+        require(requestId == compareRequestId, "Unknown requestId");
+
+        (ctBool aliceResult, ctBool bobResult) = abi.decode(data, (ctBool, ctBool));
+        _aliceResult = aliceResult;
+        _bobResult = bobResult;
+        aliceResultReady = true;
+        bobResultReady = true;
+        emit ResultReady(_alice, requestId);
+        emit ResultReady(_bob, requestId);
     }
 
     function getAliceResult() public view returns (ctBool) {
