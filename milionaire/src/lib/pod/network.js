@@ -1,4 +1,5 @@
 import { readEnv } from '../envRead.js';
+import { getMillionaireContractAddress } from '../contractAddresses.js';
 import {
     AVALANCHE_FUJI_DEFAULT_INBOX_ADDRESS,
     COTI_TESTNET_CHAIN_ID,
@@ -26,7 +27,7 @@ export const POD_NETWORKS = {
                 return t && requestId ? t.replaceAll('{requestId}', requestId) : null;
             },
         },
-        contractAddressHint: 'VITE_CONTRACT_ADDRESS_SEPOLIA (or VITE_CONTRACT_ADDRESS)',
+        contractAddressHint: `src/lib/contractAddresses.js (${SEPOLIA_CHAIN_ID})`,
         defaultInboxAddress: SEPOLIA_DEFAULT_INBOX_ADDRESS,
     },
     avalanche: {
@@ -45,7 +46,7 @@ export const POD_NETWORKS = {
                 return t && requestId ? t.replaceAll('{requestId}', requestId) : null;
             },
         },
-        contractAddressHint: 'VITE_CONTRACT_ADDRESS_AVALANCHE_FUJI (or VITE_CONTRACT_ADDRESS)',
+        contractAddressHint: `src/lib/contractAddresses.js (${AVALANCHE_FUJI_CHAIN_ID})`,
         defaultInboxAddress: AVALANCHE_FUJI_DEFAULT_INBOX_ADDRESS,
     },
 };
@@ -61,6 +62,9 @@ export function isPodDemoNetwork(networkId) {
 }
 
 export function resolvePodContractAddress(cfg) {
+    const configured = getMillionaireContractAddress(cfg.appChainId);
+    if (configured) return configured;
+
     for (const key of cfg.contractAddressEnv) {
         const v = readEnv(key);
         if (v?.trim()) return v.trim();

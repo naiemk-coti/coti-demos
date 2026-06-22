@@ -492,9 +492,9 @@ export function MillionaireHomePage({ useContractHook, network }) {
             if (!contractAddress) {
                 const hint =
                     network === 'coti'
-                        ? 'VITE_CONTRACT_ADDRESS_COTI_TESTNET (or VITE_CONTRACT_ADDRESS)'
+                        ? 'src/lib/contractAddresses.js (7082400)'
                         : getPodNetwork(network).contractAddressHint
-                setConnectionStatus(`❌ Contract address not configured. Set ${hint} in .env`)
+                setConnectionStatus(`❌ Contract address not configured. Set ${hint}`)
                 return
             }
             if (!aliceWallet) {

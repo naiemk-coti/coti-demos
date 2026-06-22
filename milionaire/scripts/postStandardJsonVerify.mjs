@@ -13,6 +13,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { config as dotenvConfig } from 'dotenv';
+import { getMillionaireContractAddress } from '../src/lib/contractAddresses.js';
 
 dotenvConfig();
 
@@ -61,12 +62,15 @@ function findPodBuildInfo() {
 
 function resolveAddress(networkCfg, cliAddress) {
     if (cliAddress?.trim()) return cliAddress.trim();
+    const configured = getMillionaireContractAddress(networkCfg.chainId);
+    if (configured) return configured;
+
     for (const key of networkCfg.addressEnv) {
         const v = process.env[key]?.trim();
         if (v) return v;
     }
     throw new Error(
-        `Pass contract address as 2nd arg or set ${networkCfg.addressEnv.join(' / ')}`,
+        `Pass contract address as 2nd arg or set ${networkCfg.chainId} in src/lib/contractAddresses.js`,
     );
 }
 

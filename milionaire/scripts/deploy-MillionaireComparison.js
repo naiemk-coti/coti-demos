@@ -91,7 +91,7 @@ async function main() {
     console.log(JSON.stringify(deploymentInfo, null, 2));
     console.log("\n📝 Next steps:");
     console.log("1. Copy the contract address above");
-    console.log("2. Update VITE_CONTRACT_ADDRESS in your .env file");
+    console.log("2. Update chain 7082400 in src/lib/contractAddresses.js");
     console.log("3. Run 'npm run dev' to start the application");
 }
 

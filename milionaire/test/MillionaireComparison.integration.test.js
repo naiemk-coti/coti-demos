@@ -17,6 +17,8 @@ import { expect } from "chai";
 import { ethers } from "ethers";
 import { Wallet } from "@coti-io/coti-ethers";
 import { config as dotenvConfig } from "dotenv";
+import { getMillionaireContractAddress } from "../src/lib/contractAddresses.js";
+import { COTI_TESTNET_CHAIN_ID } from "../src/lib/pod/defaults.js";
 
 dotenvConfig();
 
@@ -53,12 +55,15 @@ describe("MillionaireComparison Integration Tests", function () {
         const aliceAesKey = process.env.VITE_ALICE_AES_KEY;
         const bobPK = process.env.VITE_BOB_PK;
         const bobAesKey = process.env.VITE_BOB_AES_KEY;
-        contractAddress = process.env.VITE_CONTRACT_ADDRESS;
+        contractAddress =
+            getMillionaireContractAddress(COTI_TESTNET_CHAIN_ID) ||
+            process.env.VITE_CONTRACT_ADDRESS;
 
         if (!rpcUrl || !alicePK || !aliceAesKey || !bobPK || !bobAesKey || !contractAddress) {
             console.log("⚠️  Missing environment variables. Required:");
             console.log("   VITE_APP_NODE_HTTPS_ADDRESS, VITE_ALICE_PK, VITE_ALICE_AES_KEY");
-            console.log("   VITE_BOB_PK, VITE_BOB_AES_KEY, VITE_CONTRACT_ADDRESS");
+            console.log("   VITE_BOB_PK, VITE_BOB_AES_KEY");
+            console.log(`   ${COTI_TESTNET_CHAIN_ID} in src/lib/contractAddresses.js`);
             this.skip();
             return;
         }
