@@ -62,13 +62,13 @@ export function isPodDemoNetwork(networkId) {
 }
 
 export function resolvePodContractAddress(cfg) {
-    const configured = getMillionaireContractAddress(cfg.appChainId);
-    if (configured) return configured;
-
     for (const key of cfg.contractAddressEnv) {
         const v = readEnv(key);
         if (v?.trim()) return v.trim();
     }
+    const configured = getMillionaireContractAddress(cfg.appChainId);
+    if (configured) return configured;
+
     return '';
 }
 

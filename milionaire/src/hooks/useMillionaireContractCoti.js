@@ -80,8 +80,9 @@ const MILLIONAIRE_COMPARISON_ABI = [
 
 export function useMillionaireContractCoti() {
     const contractAddress =
-        getMillionaireContractAddress(COTI_TESTNET_CHAIN_ID) ||
-        readEnv('VITE_CONTRACT_ADDRESS_COTI_TESTNET') || readEnv('VITE_CONTRACT_ADDRESS');
+        readEnv('VITE_CONTRACT_ADDRESS_COTI_TESTNET') ||
+        readEnv('VITE_CONTRACT_ADDRESS') ||
+        getMillionaireContractAddress(COTI_TESTNET_CHAIN_ID);
     const rpcUrl =
         readEnv('COTI_TESTNET_RPC_URL') ||
         readEnv('VITE_APP_NODE_HTTPS_ADDRESS', 'https://testnet.coti.io/rpc');

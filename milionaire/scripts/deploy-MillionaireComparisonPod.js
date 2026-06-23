@@ -17,7 +17,7 @@ import { getPrivateKey } from '../src/lib/KeyUtils.js';
 import {
     AVALANCHE_FUJI_DEFAULT_INBOX_ADDRESS,
     COTI_TESTNET_CHAIN_ID,
-    COTI_TESTNET_MPC_EXECUTOR_ADDRESS,
+    COTI_TESTNET_MILLIONAIRE_EXECUTOR_ADDRESS,
     SEPOLIA_DEFAULT_INBOX_ADDRESS,
 } from '../src/lib/pod/defaults.js';
 
@@ -95,18 +95,20 @@ async function main() {
 
     const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
     if (target.inbox && target.inbox !== ZERO_ADDRESS) {
-        const mpcExecutorAddress =
-            process.env.COTI_TESTNET_MPC_EXECUTOR_ADDRESS || COTI_TESTNET_MPC_EXECUTOR_ADDRESS;
-        if (!ethers.isAddress(mpcExecutorAddress)) {
-            console.error('Invalid MPC executor address:', mpcExecutorAddress);
-            console.error('Fix COTI_TESTNET_MPC_EXECUTOR_ADDRESS (env) or the default in src/lib/pod/defaults.js.');
+        const millionaireExecutorAddress =
+            process.env.COTI_TESTNET_MILLIONAIRE_EXECUTOR_ADDRESS || COTI_TESTNET_MILLIONAIRE_EXECUTOR_ADDRESS;
+        if (!ethers.isAddress(millionaireExecutorAddress)) {
+            console.error('Invalid Millionaire executor address:', millionaireExecutorAddress);
+            console.error(
+                'Fix COTI_TESTNET_MILLIONAIRE_EXECUTOR_ADDRESS (env) or the default in src/lib/pod/defaults.js.',
+            );
             process.exit(1);
         }
         console.log('Configuring inbox + COTI routing…');
-        console.log('MPC executor:', mpcExecutorAddress);
+        console.log('Millionaire executor:', millionaireExecutorAddress);
         const cfgTx = await contract.configure(
             target.inbox,
-            mpcExecutorAddress,
+            millionaireExecutorAddress,
             COTI_TESTNET_CHAIN_ID,
             { gasLimit: 200_000 },
         );

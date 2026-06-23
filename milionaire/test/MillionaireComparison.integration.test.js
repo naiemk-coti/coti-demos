@@ -56,8 +56,8 @@ describe("MillionaireComparison Integration Tests", function () {
         const bobPK = process.env.VITE_BOB_PK;
         const bobAesKey = process.env.VITE_BOB_AES_KEY;
         contractAddress =
-            getMillionaireContractAddress(COTI_TESTNET_CHAIN_ID) ||
-            process.env.VITE_CONTRACT_ADDRESS;
+            process.env.VITE_CONTRACT_ADDRESS ||
+            getMillionaireContractAddress(COTI_TESTNET_CHAIN_ID);
 
         if (!rpcUrl || !alicePK || !aliceAesKey || !bobPK || !bobAesKey || !contractAddress) {
             console.log("⚠️  Missing environment variables. Required:");
