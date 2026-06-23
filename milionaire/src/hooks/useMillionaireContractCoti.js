@@ -3,6 +3,8 @@ import { ethers } from 'ethers';
 import { Wallet } from '@coti-io/coti-ethers';
 import { readEnv } from '../lib/envRead.js';
 import { tryGetPrivateKey } from '../lib/KeyUtils.js';
+import { getMillionaireContractAddress } from '../lib/contractAddresses.js';
+import { COTI_TESTNET_CHAIN_ID } from '../lib/pod/defaults.js';
 
 // Retry utility for handling transient RPC errors
 async function retryWithBackoff(
@@ -78,6 +80,7 @@ const MILLIONAIRE_COMPARISON_ABI = [
 
 export function useMillionaireContractCoti() {
     const contractAddress =
+        getMillionaireContractAddress(COTI_TESTNET_CHAIN_ID) ||
         readEnv('VITE_CONTRACT_ADDRESS_COTI_TESTNET') || readEnv('VITE_CONTRACT_ADDRESS');
     const rpcUrl =
         readEnv('COTI_TESTNET_RPC_URL') ||
@@ -150,7 +153,7 @@ export function useMillionaireContractCoti() {
     const getContract = (wallet) => {
         if (!contractAddress) {
             throw new Error(
-                'Contract address not set. Set VITE_CONTRACT_ADDRESS_COTI_TESTNET or VITE_CONTRACT_ADDRESS in .env'
+                `Contract address not set. Add ${COTI_TESTNET_CHAIN_ID} to src/lib/contractAddresses.js`
             );
         }
         return new ethers.Contract(contractAddress, MILLIONAIRE_COMPARISON_ABI, wallet);

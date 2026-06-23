@@ -114,10 +114,14 @@ npm run compile
 npm run deploy:coti
 ```
 
-After deployment, copy the contract address and update your `.env` file:
+After deployment, copy the contract address and update `src/lib/contractAddresses.js`:
 
-```env
-VITE_CONTRACT_ADDRESS=0x...  # Your deployed contract address
+```js
+export const MILLIONAIRE_CONTRACT_ADDRESSES = {
+    7082400: '0x...', // COTI Testnet
+    11155111: '', // Sepolia
+    43113: '', // Avalanche Fuji
+};
 ```
 
 ### 5. Run the Application
@@ -296,7 +300,7 @@ The contract uses COTI's MPC Core library for:
 
 1. **Contract not configured error**
    - Ensure you've copied `.env.example` to `.env`
-   - Verify contract address is set in `.env`
+   - Verify contract address is set in `src/lib/contractAddresses.js`
    - Check that the contract address is valid
 
 2. **Wallet not configured error**

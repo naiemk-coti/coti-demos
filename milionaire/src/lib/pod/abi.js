@@ -1,8 +1,9 @@
-/** MillionaireComparisonPod — pod-mpc-lib flat `itUint256` / `ctUint256`. */
+/** MillionaireComparisonPod — pod-mpc-lib `itUint64` / `ctUint64`. */
 export const MILLIONAIRE_COMPARISON_ABI = [
-    'function setAliceWealth(tuple(tuple(uint256 ciphertextHigh, uint256 ciphertextLow) ciphertext, bytes signature) wealth) external',
-    'function setBobWealth(tuple(tuple(uint256 ciphertextHigh, uint256 ciphertextLow) ciphertext, bytes signature) wealth) external',
+    'function setAliceWealth(tuple(uint256 ciphertext, bytes signature) wealth) external',
+    'function setBobWealth(tuple(uint256 ciphertext, bytes signature) wealth) external',
     'function compareWealth(uint256 callbackFeeWei) external payable',
+    'function compareRequestId() external view returns (bytes32)',
     'function inbox() external view returns (address)',
     'function isAliceWealthSet() external view returns (bool)',
     'function isBobWealthSet() external view returns (bool)',
@@ -13,7 +14,7 @@ export const MILLIONAIRE_COMPARISON_ABI = [
     'function getBobResult() external view returns (uint256)',
     'function getAliceAddress() external view returns (address)',
     'function getBobAddress() external view returns (address)',
-    'function getAliceWealth() public view returns (tuple(uint256 ciphertextHigh, uint256 ciphertextLow))',
-    'function getBobWealth() public view returns (tuple(uint256 ciphertextHigh, uint256 ciphertextLow))',
+    'function getAliceWealth() public view returns (uint256)',
+    'function getBobWealth() public view returns (uint256)',
     'function reset() external',
 ];

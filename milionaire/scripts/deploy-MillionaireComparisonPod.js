@@ -28,12 +28,10 @@ const CONTRACT_NAME = 'MillionaireComparisonPod';
 const DEPLOY_TARGETS = {
     sepolia: {
         contractName: CONTRACT_NAME,
-        envKey: 'VITE_CONTRACT_ADDRESS_SEPOLIA',
         inbox: SEPOLIA_DEFAULT_INBOX_ADDRESS,
     },
     avalancheFuji: {
         contractName: CONTRACT_NAME,
-        envKey: 'VITE_CONTRACT_ADDRESS_AVALANCHE_FUJI',
         inbox: AVALANCHE_FUJI_DEFAULT_INBOX_ADDRESS,
     },
 };
@@ -97,10 +95,18 @@ async function main() {
 
     const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
     if (target.inbox && target.inbox !== ZERO_ADDRESS) {
+        const mpcExecutorAddress =
+            process.env.COTI_TESTNET_MPC_EXECUTOR_ADDRESS || COTI_TESTNET_MPC_EXECUTOR_ADDRESS;
+        if (!ethers.isAddress(mpcExecutorAddress)) {
+            console.error('Invalid MPC executor address:', mpcExecutorAddress);
+            console.error('Fix COTI_TESTNET_MPC_EXECUTOR_ADDRESS (env) or the default in src/lib/pod/defaults.js.');
+            process.exit(1);
+        }
         console.log('Configuring inbox + COTI routing…');
+        console.log('MPC executor:', mpcExecutorAddress);
         const cfgTx = await contract.configure(
             target.inbox,
-            COTI_TESTNET_MPC_EXECUTOR_ADDRESS,
+            mpcExecutorAddress,
             COTI_TESTNET_CHAIN_ID,
             { gasLimit: 200_000 },
         );
@@ -123,7 +129,8 @@ async function main() {
     console.log('configurePlayers tx:', tx.hash);
 
     console.log(`\n✅ ${target.contractName} deployed at:`, address);
-    console.log(`\nAdd to .env:\n  ${target.envKey}=${address}`);
+    const deployedNetwork = await ethers.provider.getNetwork();
+    console.log(`\nAdd to src/lib/contractAddresses.js:\n  ${deployedNetwork.chainId}: '${address}',`);
 }
 
 main()
