@@ -78,7 +78,7 @@ const MILLIONAIRE_COMPARISON_ABI = [
 
 export function useMillionaireContract() {
     const contractAddress =
-        getMillionaireContractAddress(COTI_TESTNET_CHAIN_ID) || import.meta.env.VITE_CONTRACT_ADDRESS;
+        import.meta.env.VITE_CONTRACT_ADDRESS || getMillionaireContractAddress(COTI_TESTNET_CHAIN_ID);
     const rpcUrl = import.meta.env.VITE_APP_NODE_HTTPS_ADDRESS || 'https://testnet.coti.io/rpc';
 
     // Create wallets for Alice and Bob

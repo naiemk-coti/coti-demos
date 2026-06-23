@@ -62,13 +62,14 @@ function findPodBuildInfo() {
 
 function resolveAddress(networkCfg, cliAddress) {
     if (cliAddress?.trim()) return cliAddress.trim();
-    const configured = getMillionaireContractAddress(networkCfg.chainId);
-    if (configured) return configured;
 
     for (const key of networkCfg.addressEnv) {
         const v = process.env[key]?.trim();
         if (v) return v;
     }
+    const configured = getMillionaireContractAddress(networkCfg.chainId);
+    if (configured) return configured;
+
     throw new Error(
         `Pass contract address as 2nd arg or set ${networkCfg.chainId} in src/lib/contractAddresses.js`,
     );
