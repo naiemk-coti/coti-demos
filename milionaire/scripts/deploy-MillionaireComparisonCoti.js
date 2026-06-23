@@ -36,7 +36,7 @@ async function main() {
     const address = await contract.getAddress();
     console.log(`\n✅ ${CONTRACT_NAME} deployed at:`, address);
     console.log('\nUse this when deploying/configuring the host PoD contract:');
-    console.log(`  COTI_TESTNET_MPC_EXECUTOR_ADDRESS=${address}`);
+    console.log(`  COTI_TESTNET_MILLIONAIRE_EXECUTOR_ADDRESS=${address}`);
 }
 
 main()
