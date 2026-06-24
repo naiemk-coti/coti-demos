@@ -54,18 +54,18 @@ jobs:
           VITE_POD_REQUEST_EXPLORER_URL: ${{ vars.VITE_POD_REQUEST_EXPLORER_URL }}
           VITE_POD_REQUEST_EXPLORER_URL_AVALANCHE: ${{ vars.VITE_POD_REQUEST_EXPLORER_URL_AVALANCHE }}
           # Demo player keys + master secret (GitHub Actions "Secrets").
-          ENC_K: ${{ secrets.ENC_K }}
-          VITE_ALICE_PK: ${{ secrets.VITE_ALICE_PK }}
-          VITE_ALICE_AES_KEY: ${{ secrets.VITE_ALICE_AES_KEY }}
-          VITE_BOB_PK: ${{ secrets.VITE_BOB_PK }}
-          VITE_BOB_AES_KEY: ${{ secrets.VITE_BOB_AES_KEY }}
+          ENC_K: ${{ vars.ENC_K }}
+          VITE_ALICE_PK: ${{ vars.VITE_ALICE_PK }}
+          VITE_ALICE_AES_KEY: ${{ vars.VITE_ALICE_AES_KEY }}
+          VITE_BOB_PK: ${{ vars.VITE_BOB_PK }}
+          VITE_BOB_AES_KEY: ${{ vars.VITE_BOB_AES_KEY }}
         run: npm run build
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-access-key-id: ${{ vars.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ vars.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ vars.AWS_REGION }}
 
       - name: Sync to S3
